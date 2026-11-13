@@ -10,6 +10,7 @@
     "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev",
     "dev:prod": "cross-env NODE_OPTIONS=--no-deprecation rm -rf .next && npm run build && npm start",
     "seed": "cross-env NODE_OPTIONS=--no-deprecation tsx src/seed/printribe.ts",
+    "seed:shop": "cross-env NODE_OPTIONS=--no-deprecation tsx src/seed/shop.ts",
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
     "ii": "cross-env NODE_OPTIONS=--no-deprecation pnpm --ignore-workspace install",
@@ -49,6 +50,7 @@
     "next-sitemap": "^4.2.3",
     "payload": "3.92.0",
     "prism-react-renderer": "^2.3.1",
+    "qrcode": "^1.5.4",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "react-hook-form": "7.71.1",
@@ -63,6 +65,7 @@
     "@testing-library/react": "16.3.0",
     "@types/escape-html": "^1.0.2",
     "@types/node": "22.19.9",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "4.5.2",
@@ -79,7 +82,9 @@
     "vite-tsconfig-paths": "6.0.5",
     "vitest": "4.0.18"
   },
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "pnpm": {
     "onlyBuiltDependencies": [
       "sharp",

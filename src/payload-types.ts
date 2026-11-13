@@ -71,6 +71,10 @@ export interface Config {
     posts: Post;
     media: Media;
     categories: Category;
+    'product-categories': ProductCategory;
+    products: Product;
+    orders: Order;
+    'payment-proofs': PaymentProof;
     subscribers: Subscriber;
     users: User;
     redirects: Redirect;
@@ -94,6 +98,10 @@ export interface Config {
     posts: PostsSelect<false> | PostsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    'product-categories': ProductCategoriesSelect<false> | ProductCategoriesSelect<true>;
+    products: ProductsSelect<false> | ProductsSelect<true>;
+    orders: OrdersSelect<false> | OrdersSelect<true>;
+    'payment-proofs': PaymentProofsSelect<false> | PaymentProofsSelect<true>;
     subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
@@ -114,10 +122,12 @@ export interface Config {
   globals: {
     header: Header;
     footer: Footer;
+    'shop-settings': ShopSetting;
   };
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
+    'shop-settings': ShopSettingsSelect<false> | ShopSettingsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -1043,6 +1053,205 @@ export interface Form {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-categories".
+ */
+export interface ProductCategory {
+  id: number;
+  title: string;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  /**
+   * Leave empty for a main category (Apparel). Pick the main category for a sub-category (T-shirts).
+   */
+  parent?: (number | null) | ProductCategory;
+  /**
+   * One or two lines shown under the category heading on the All products page.
+   */
+  description?: string | null;
+  /**
+   * Picture for the round tile at the top of the All products page.
+   */
+  image?: (number | null) | Media;
+  /**
+   * Smaller numbers come first.
+   */
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products".
+ */
+export interface Product {
+  id: number;
+  title: string;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  /**
+   * Tick to show this product on the website.
+   */
+  published?: boolean | null;
+  /**
+   * Main category, for example Apparel.
+   */
+  category: number | ProductCategory;
+  /**
+   * Optional, for example T-shirts.
+   */
+  subCategory?: (number | null) | ProductCategory;
+  /**
+   * Price per piece in rupees, GST included. This is the "From" price on the shop page.
+   */
+  price: number;
+  /**
+   * Smallest number of pieces a customer can order.
+   */
+  minQuantity: number;
+  /**
+   * Optional "buy more, pay less" prices. Example: 25 pieces and above cost 380 each. Leave empty if the price is the same for every quantity.
+   */
+  priceTiers?:
+    | {
+        /**
+         * This price applies from this many pieces.
+         */
+        minQuantity: number;
+        /**
+         * Price per piece in rupees.
+         */
+        price: number;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Shown on the card, for example "10 to 15 days".
+   */
+  deliveryDays?: string | null;
+  /**
+   * The first picture is the main one. The second shows when someone hovers over the card.
+   */
+  images?:
+    | {
+        image: number | Media;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * One row per colour. These become the colour dots on the card.
+   */
+  colours?:
+    | {
+        name: string;
+        /**
+         * Colour code such as #1D1D1F
+         */
+        hex: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * For example S, M, L, XL.
+   */
+  sizes?:
+    | {
+        size: string;
+        id?: string | null;
+      }[]
+    | null;
+  description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders".
+ */
+export interface Order {
+  id: number;
+  orderNumber: string;
+  status:
+    | 'awaiting-payment'
+    | 'payment-submitted'
+    | 'payment-verified'
+    | 'in-production'
+    | 'shipped'
+    | 'delivered'
+    | 'cancelled';
+  publicToken: string;
+  product?: (number | null) | Product;
+  productTitle: string;
+  colour?: string | null;
+  sizes?:
+    | {
+        size: string;
+        quantity: number;
+        id?: string | null;
+      }[]
+    | null;
+  quantity: number;
+  /**
+   * Rupees per piece
+   */
+  unitPrice: number;
+  subtotal: number;
+  deliveryFee: number;
+  /**
+   * Amount the customer must pay
+   */
+  total: number;
+  customerName: string;
+  phone: string;
+  email: string;
+  addressLine1: string;
+  addressLine2?: string | null;
+  city: string;
+  state: string;
+  pincode: string;
+  /**
+   * Screenshot uploaded by the customer. Check it against your UPI app before verifying.
+   */
+  paymentProof?: (number | null) | PaymentProof;
+  /**
+   * UPI transaction ID the customer entered (optional).
+   */
+  utr?: string | null;
+  paymentSubmittedAt?: string | null;
+  courier?: string | null;
+  trackingNumber?: string | null;
+  /**
+   * Only you can see this.
+   */
+  internalNotes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payment-proofs".
+ */
+export interface PaymentProof {
+  id: number;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "subscribers".
  */
 export interface Subscriber {
@@ -1257,6 +1466,22 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'categories';
         value: number | Category;
+      } | null)
+    | ({
+        relationTo: 'product-categories';
+        value: number | ProductCategory;
+      } | null)
+    | ({
+        relationTo: 'products';
+        value: number | Product;
+      } | null)
+    | ({
+        relationTo: 'orders';
+        value: number | Order;
+      } | null)
+    | ({
+        relationTo: 'payment-proofs';
+        value: number | PaymentProof;
       } | null)
     | ({
         relationTo: 'subscribers';
@@ -1826,6 +2051,122 @@ export interface CategoriesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "product-categories_select".
+ */
+export interface ProductCategoriesSelect<T extends boolean = true> {
+  title?: T;
+  generateSlug?: T;
+  slug?: T;
+  parent?: T;
+  description?: T;
+  image?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "products_select".
+ */
+export interface ProductsSelect<T extends boolean = true> {
+  title?: T;
+  generateSlug?: T;
+  slug?: T;
+  published?: T;
+  category?: T;
+  subCategory?: T;
+  price?: T;
+  minQuantity?: T;
+  priceTiers?:
+    | T
+    | {
+        minQuantity?: T;
+        price?: T;
+        id?: T;
+      };
+  deliveryDays?: T;
+  images?:
+    | T
+    | {
+        image?: T;
+        id?: T;
+      };
+  colours?:
+    | T
+    | {
+        name?: T;
+        hex?: T;
+        id?: T;
+      };
+  sizes?:
+    | T
+    | {
+        size?: T;
+        id?: T;
+      };
+  description?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders_select".
+ */
+export interface OrdersSelect<T extends boolean = true> {
+  orderNumber?: T;
+  status?: T;
+  publicToken?: T;
+  product?: T;
+  productTitle?: T;
+  colour?: T;
+  sizes?:
+    | T
+    | {
+        size?: T;
+        quantity?: T;
+        id?: T;
+      };
+  quantity?: T;
+  unitPrice?: T;
+  subtotal?: T;
+  deliveryFee?: T;
+  total?: T;
+  customerName?: T;
+  phone?: T;
+  email?: T;
+  addressLine1?: T;
+  addressLine2?: T;
+  city?: T;
+  state?: T;
+  pincode?: T;
+  paymentProof?: T;
+  utr?: T;
+  paymentSubmittedAt?: T;
+  courier?: T;
+  trackingNumber?: T;
+  internalNotes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payment-proofs_select".
+ */
+export interface PaymentProofsSelect<T extends boolean = true> {
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "subscribers_select".
  */
 export interface SubscribersSelect<T extends boolean = true> {
@@ -2247,6 +2588,35 @@ export interface Footer {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "shop-settings".
+ */
+export interface ShopSetting {
+  id: number;
+  /**
+   * Delivery charge in rupees when the order is below the free-delivery amount.
+   */
+  deliveryFee: number;
+  /**
+   * Orders with items totalling this much or more get free delivery.
+   */
+  freeDeliveryAbove: number;
+  /**
+   * The UPI ID customers pay to, for example printribe@okbank. Required before orders can be taken.
+   */
+  upiId?: string | null;
+  /**
+   * The name shown in the customer’s UPI app.
+   */
+  upiPayeeName?: string | null;
+  /**
+   * Optional extra line shown on the payment page, for example a helpline number.
+   */
+  paymentNote?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header_select".
  */
 export interface HeaderSelect<T extends boolean = true> {
@@ -2338,6 +2708,20 @@ export interface FooterSelect<T extends boolean = true> {
             };
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "shop-settings_select".
+ */
+export interface ShopSettingsSelect<T extends boolean = true> {
+  deliveryFee?: T;
+  freeDeliveryAbove?: T;
+  upiId?: T;
+  upiPayeeName?: T;
+  paymentNote?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

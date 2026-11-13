@@ -57,8 +57,8 @@ async function seed() {
         url: '/quote',
       },
       navItems: [
-        { ...link('Apparel', '/apparel'), soon: false },
-        { ...link('Accessories', '/accessories'), soon: false },
+        { ...link('Apparel', '/shop'), soon: false },
+        { ...link('Accessories', '/shop#cat-accessories'), soon: false },
         { ...link('Bulk orders', '/bulk-orders'), soon: false },
         { ...link('Design Studio', '/design-studio'), soon: true },
         { ...link('Blog', '/posts'), soon: false },
@@ -75,7 +75,7 @@ async function seed() {
     data: {
       about: 'Custom apparel and accessories for teams, colleges, brands and individuals.',
       columns: [
-        { title: 'Shop', links: [link('Apparel', '/apparel'), link('Accessories', '/accessories')] },
+        { title: 'Shop', links: [link('Apparel', '/shop'), link('Accessories', '/shop#cat-accessories')] },
         {
           title: 'Services',
           links: [link('Bulk orders', '/bulk-orders'), link('Get a quote', '/quote'), link('Design Studio', '/design-studio')],
@@ -137,7 +137,7 @@ async function seed() {
           headline: 'Merch that means something. Made right, delivered on time.',
           subline: 'We handle the design help, printing and delivery, so every piece arrives right the first time.',
           buttons: [
-            { label: 'Shop apparel', url: '/apparel', style: 'white' },
+            { label: 'Shop apparel', url: '/shop', style: 'white' },
             { label: 'Get a bulk quote', url: '/quote', style: 'ghost' },
             { label: 'Design now', url: '/design-studio', style: 'ghost' },
           ],
@@ -174,15 +174,15 @@ async function seed() {
             {
               kicker: 'Custom',
               title: 'Apparel',
-              url: '/apparel',
+              url: '/shop',
               links: [
-                { label: 'T-shirts', url: '/apparel/t-shirts' },
-                { label: 'Polos', url: '/apparel/polos' },
-                { label: 'Hoodies', url: '/apparel/hoodies' },
-                { label: 'Jerseys', url: '/apparel/jerseys' },
+                { label: 'T-shirts', url: '/shop' },
+                { label: 'Polos', url: '/shop' },
+                { label: 'Hoodies', url: '/shop' },
+                { label: 'Jerseys', url: '/shop' },
               ],
             },
-            { kicker: 'Custom', title: 'Accessories', url: '/accessories', links: [] },
+            { kicker: 'Custom', title: 'Accessories', url: '/shop#cat-accessories', links: [] },
           ],
         },
         {

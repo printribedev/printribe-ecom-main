@@ -8,6 +8,11 @@ import { Categories } from './collections/Categories'
 import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { Posts } from './collections/Posts'
+import { ProductCategories } from './collections/ProductCategories'
+import { Products } from './collections/Products'
+import { Orders } from './collections/Orders'
+import { PaymentProofs } from './collections/PaymentProofs'
+import { ShopSettings } from './globals/ShopSettings'
 import { Subscribers } from './collections/Subscribers'
 import { Users } from './collections/Users'
 import { Footer } from './Footer/config'
@@ -63,9 +68,9 @@ export default buildConfig({
   db: sqliteAdapter({
     client: { url: process.env.DATABASE_URL || 'file:./printribe-dev.db' },
   }),
-  collections: [Pages, Posts, Media, Categories, Subscribers, Users],
+  collections: [Pages, Posts, Media, Categories, ProductCategories, Products, Orders, PaymentProofs, Subscribers, Users],
   cors: [getServerSideURL()].filter(Boolean),
-  globals: [Header, Footer],
+  globals: [Header, Footer, ShopSettings],
   plugins,
   secret: process.env.PAYLOAD_SECRET,
   sharp,
