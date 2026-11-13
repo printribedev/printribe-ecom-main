@@ -4,8 +4,7 @@ import { authenticated } from '../access/authenticated'
 
 export const ORDER_STATUSES = [
   { label: 'Awaiting payment', value: 'awaiting-payment' },
-  { label: 'Payment submitted (check it)', value: 'payment-submitted' },
-  { label: 'Payment verified', value: 'payment-verified' },
+  { label: 'Paid', value: 'paid' },
   { label: 'In production', value: 'in-production' },
   { label: 'Shipped', value: 'shipped' },
   { label: 'Delivered', value: 'delivered' },
@@ -14,7 +13,8 @@ export const ORDER_STATUSES = [
 
 /**
  * One document per customer order. Customers never write to this directly: the server creates it after
- * re-checking the product, quantity and price. Only mark "Payment verified" after you see the money.
+ * re-checking the product, quantity and price. An order becomes "Paid" automatically, only after Razorpay's
+ * payment signature is verified on the server. Ship only orders that show "Paid" (or later).
  */
 export const Orders: CollectionConfig = {
   slug: 'orders',
@@ -86,16 +86,11 @@ export const Orders: CollectionConfig = {
     },
     {
       type: 'collapsible',
-      label: 'Payment',
+      label: 'Payment (Razorpay)',
       fields: [
-        {
-          name: 'paymentProof',
-          type: 'upload',
-          relationTo: 'payment-proofs',
-          admin: { description: 'Screenshot uploaded by the customer. Check it against your UPI app before verifying.' },
-        },
-        { name: 'utr', type: 'text', admin: { description: 'UPI transaction ID the customer entered (optional).' } },
-        { name: 'paymentSubmittedAt', type: 'date', admin: { readOnly: true } },
+        { name: 'razorpayOrderId', type: 'text', index: true, admin: { readOnly: true } },
+        { name: 'razorpayPaymentId', type: 'text', admin: { readOnly: true, description: 'Search this ID in the Razorpay dashboard.' } },
+        { name: 'paidAt', type: 'date', admin: { readOnly: true } },
       ],
     },
     {

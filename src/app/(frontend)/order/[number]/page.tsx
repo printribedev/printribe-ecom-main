@@ -13,9 +13,8 @@ type Args = {
 }
 
 const STATUS_TEXT: Record<string, { title: string; body: string }> = {
-  'awaiting-payment': { title: 'Waiting for your payment', body: 'Please complete the UPI payment and upload the screenshot.' },
-  'payment-submitted': { title: 'We received your payment screenshot', body: 'We are checking your payment. This usually takes a few hours. Keep this page link and come back to see the latest status.' },
-  'payment-verified': { title: 'Payment verified', body: 'Thank you. Your order is confirmed and goes into production soon.' },
+  'awaiting-payment': { title: 'Payment pending', body: 'Your payment has not been completed yet. You can pay now to confirm your order.' },
+  paid: { title: 'Payment received. Thank you!', body: 'Your order is confirmed and goes into production soon. Keep this page link to check progress.' },
   'in-production': { title: 'Your order is in production', body: 'Your pieces are being made and checked.' },
   shipped: { title: 'Your order has shipped', body: 'It is on its way to you.' },
   delivered: { title: 'Delivered', body: 'We hope you love it.' },
@@ -65,7 +64,7 @@ export default async function OrderPage({ params, searchParams }: Args) {
             href={`/checkout/payment?o=${encodeURIComponent(o.orderNumber)}&t=${encodeURIComponent(token)}`}
             className="mt-6 inline-flex rounded-full bg-sky px-6 py-3 text-[17px] font-medium text-white hover:bg-sky/90"
           >
-            Go to payment
+            Pay now
           </Link>
         )}
 
@@ -99,7 +98,7 @@ export default async function OrderPage({ params, searchParams }: Args) {
           )}
         </div>
 
-        <p className="mt-8 text-[15px] text-muted-foreground">Save this page link to check your order any time. Standard delivery takes 10 to 15 days after your payment is verified.</p>
+        <p className="mt-8 text-[15px] text-muted-foreground">Save this page link to check your order any time. Standard delivery takes 10 to 15 days after your payment.</p>
       </div>
     </div>
   )

@@ -13,7 +13,7 @@ Goal of Phase A: the first real order placed, paid and shipped.
 | 4 | Product page (photos, colours, sizes, quantity, price tiers, Buy now) | `/products/[slug]` | Built (size chart table still to add) |
 | 5 | Cart | `/cart` | Skipped for now: Buy now goes straight to checkout |
 | 6 | Checkout: customer and delivery details | `/checkout` | Built and tested (dummy-entry checks, pincode and email checks) |
-| 7 | Payment: UPI QR and payment screenshot | `/checkout/payment` | Built and tested. Needs your UPI ID in Shop settings |
+| 7 | Payment with Razorpay (Pay button, signature check, webhook) | `/checkout/payment` | Built. Needs your Razorpay test keys in `.env` to try a real payment |
 | 8 | Order status | `/order/[number]` | Built and tested |
 | 9 | Track my order | `/track` | To do |
 | 10 | Contact | `/contact` | To do |

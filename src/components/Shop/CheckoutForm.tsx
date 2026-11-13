@@ -174,7 +174,7 @@ export const CheckoutForm: React.FC<{ s: CheckoutSummary }> = ({ s }) => {
         >
           {busy ? 'Checking your details…' : 'Continue to payment'}
         </button>
-        <p className="text-center text-sm text-muted-foreground">You will pay by UPI on the next step.</p>
+        <p className="text-center text-sm text-muted-foreground">You will pay securely on the next step (UPI, cards, netbanking).</p>
       </form>
 
       {/* Order summary */}

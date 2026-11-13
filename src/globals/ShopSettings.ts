@@ -2,7 +2,7 @@ import type { GlobalConfig } from 'payload'
 
 import { authenticated } from '../access/authenticated'
 
-/** Shop-wide settings the owner can change in the admin: delivery fee rule and UPI payment details. */
+/** Shop-wide settings the owner can change in the admin: delivery fee rule. */
 export const ShopSettings: GlobalConfig = {
   slug: 'shop-settings',
   label: 'Shop settings',
@@ -29,22 +29,6 @@ export const ShopSettings: GlobalConfig = {
           admin: { description: 'Orders with items totalling this much or more get free delivery.' },
         },
       ],
-    },
-    {
-      name: 'upiId',
-      type: 'text',
-      admin: { description: 'The UPI ID customers pay to, for example printribe@okbank. Required before orders can be taken.' },
-    },
-    {
-      name: 'upiPayeeName',
-      type: 'text',
-      defaultValue: 'Printribe',
-      admin: { description: 'The name shown in the customer’s UPI app.' },
-    },
-    {
-      name: 'paymentNote',
-      type: 'textarea',
-      admin: { description: 'Optional extra line shown on the payment page, for example a helpline number.' },
     },
   ],
 }

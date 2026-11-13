@@ -74,7 +74,6 @@ export interface Config {
     'product-categories': ProductCategory;
     products: Product;
     orders: Order;
-    'payment-proofs': PaymentProof;
     subscribers: Subscriber;
     users: User;
     redirects: Redirect;
@@ -101,7 +100,6 @@ export interface Config {
     'product-categories': ProductCategoriesSelect<false> | ProductCategoriesSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
-    'payment-proofs': PaymentProofsSelect<false> | PaymentProofsSelect<true>;
     subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     redirects: RedirectsSelect<false> | RedirectsSelect<true>;
@@ -1176,14 +1174,7 @@ export interface Product {
 export interface Order {
   id: number;
   orderNumber: string;
-  status:
-    | 'awaiting-payment'
-    | 'payment-submitted'
-    | 'payment-verified'
-    | 'in-production'
-    | 'shipped'
-    | 'delivered'
-    | 'cancelled';
+  status: 'awaiting-payment' | 'paid' | 'in-production' | 'shipped' | 'delivered' | 'cancelled';
   publicToken: string;
   product?: (number | null) | Product;
   productTitle: string;
@@ -1214,15 +1205,12 @@ export interface Order {
   city: string;
   state: string;
   pincode: string;
+  razorpayOrderId?: string | null;
   /**
-   * Screenshot uploaded by the customer. Check it against your UPI app before verifying.
+   * Search this ID in the Razorpay dashboard.
    */
-  paymentProof?: (number | null) | PaymentProof;
-  /**
-   * UPI transaction ID the customer entered (optional).
-   */
-  utr?: string | null;
-  paymentSubmittedAt?: string | null;
+  razorpayPaymentId?: string | null;
+  paidAt?: string | null;
   courier?: string | null;
   trackingNumber?: string | null;
   /**
@@ -1231,24 +1219,6 @@ export interface Order {
   internalNotes?: string | null;
   updatedAt: string;
   createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payment-proofs".
- */
-export interface PaymentProof {
-  id: number;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1478,10 +1448,6 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'orders';
         value: number | Order;
-      } | null)
-    | ({
-        relationTo: 'payment-proofs';
-        value: number | PaymentProof;
       } | null)
     | ({
         relationTo: 'subscribers';
@@ -2139,31 +2105,14 @@ export interface OrdersSelect<T extends boolean = true> {
   city?: T;
   state?: T;
   pincode?: T;
-  paymentProof?: T;
-  utr?: T;
-  paymentSubmittedAt?: T;
+  razorpayOrderId?: T;
+  razorpayPaymentId?: T;
+  paidAt?: T;
   courier?: T;
   trackingNumber?: T;
   internalNotes?: T;
   updatedAt?: T;
   createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "payment-proofs_select".
- */
-export interface PaymentProofsSelect<T extends boolean = true> {
-  updatedAt?: T;
-  createdAt?: T;
-  url?: T;
-  thumbnailURL?: T;
-  filename?: T;
-  mimeType?: T;
-  filesize?: T;
-  width?: T;
-  height?: T;
-  focalX?: T;
-  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2600,18 +2549,6 @@ export interface ShopSetting {
    * Orders with items totalling this much or more get free delivery.
    */
   freeDeliveryAbove: number;
-  /**
-   * The UPI ID customers pay to, for example printribe@okbank. Required before orders can be taken.
-   */
-  upiId?: string | null;
-  /**
-   * The name shown in the customer’s UPI app.
-   */
-  upiPayeeName?: string | null;
-  /**
-   * Optional extra line shown on the payment page, for example a helpline number.
-   */
-  paymentNote?: string | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -2719,9 +2656,6 @@ export interface FooterSelect<T extends boolean = true> {
 export interface ShopSettingsSelect<T extends boolean = true> {
   deliveryFee?: T;
   freeDeliveryAbove?: T;
-  upiId?: T;
-  upiPayeeName?: T;
-  paymentNote?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
