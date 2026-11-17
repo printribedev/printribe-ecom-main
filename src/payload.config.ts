@@ -1,4 +1,6 @@
+import { postgresAdapter } from '@payloadcms/db-postgres'
 import { sqliteAdapter } from '@payloadcms/db-sqlite'
+import { s3Storage } from '@payloadcms/storage-s3'
 import sharp from 'sharp'
 import path from 'path'
 import { buildConfig, PayloadRequest } from 'payload'
@@ -62,15 +64,41 @@ export default buildConfig({
   },
   // This config helps us configure global or default features that the other editors can inherit
   editor: defaultLexical,
-  // Local development database (a single file). For production this switches to the Postgres adapter
-  // pointed at the new Supabase project.
-  db: sqliteAdapter({
-    client: { url: process.env.DATABASE_URL || 'file:./printribe-dev.db' },
-  }),
+  // Database: Supabase Postgres when POSTGRES_URL is set (live site), otherwise a local SQLite file.
+  // On Postgres, tables are created by migrations (src/migrations), not by dev auto-push.
+  db: process.env.POSTGRES_URL
+    ? postgresAdapter({
+        pool: { connectionString: process.env.POSTGRES_URL },
+        push: false,
+        migrationDir: path.resolve(dirname, 'migrations'),
+      })
+    : sqliteAdapter({
+        client: { url: process.env.DATABASE_URL || 'file:./printribe-dev.db' },
+      }),
   collections: [Pages, Posts, Media, Categories, ProductCategories, Products, Orders, Subscribers, Users],
   cors: [getServerSideURL()].filter(Boolean),
   globals: [Header, Footer, ShopSettings],
-  plugins,
+  plugins: [
+    ...plugins,
+    // Media files go to Cloudflare R2 when its keys are set, otherwise to the local folder.
+    ...(process.env.R2_ACCESS_KEY_ID
+      ? [
+          s3Storage({
+            collections: { media: { prefix: 'media', generateFileURL: ({ filename, prefix }) => `${process.env.R2_PUBLIC_URL}/${prefix}/${filename}` } },
+            bucket: process.env.R2_BUCKET || '',
+            config: {
+              credentials: {
+                accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
+                secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
+              },
+              region: 'auto',
+              endpoint: process.env.R2_ENDPOINT,
+              forcePathStyle: true,
+            },
+          }),
+        ]
+      : []),
+  ],
   secret: process.env.PAYLOAD_SECRET,
   sharp,
   typescript: {

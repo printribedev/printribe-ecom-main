@@ -29,3 +29,5 @@ node_modules/
 
 # Customer payment screenshots (private)
 private-uploads/
+
+.env.vercel
