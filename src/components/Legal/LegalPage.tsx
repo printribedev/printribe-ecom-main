@@ -27,7 +27,7 @@ const withEmail = (text: string) => {
 
 export const LegalPage: React.FC<{ doc: LegalDoc }> = ({ doc }) => (
   <div className="container py-12 pb-24">
-    <div className="mx-auto max-w-3xl">
+    <div>
       <p className="text-[15px] text-muted-foreground">Last updated {doc.updated}</p>
       <h1 className="font-heading mt-1 text-[clamp(32px,4.5vw,48px)] leading-tight">{doc.title}</h1>
       <p className="mt-4 text-lg text-body">{doc.intro}</p>
