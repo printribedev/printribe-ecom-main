@@ -18,8 +18,8 @@ Goal of Phase A: the first real order placed, paid and shipped.
 | 9 | Track my order | `/track` | To do |
 | 10 | Contact | `/contact` | To do |
 | 11 | Shipping and returns | `/shipping-returns` | To do |
-| 12 | Terms and conditions | `/terms` | To do |
-| 13 | Privacy policy | `/privacy` | To do |
+| 12 | Terms and conditions | `/terms` | Built (text copied from the Framer site) |
+| 13 | Privacy policy | `/privacy` | Built (text copied from the Framer site) |
 | 14 | Page not found (404) | any wrong address | Template default, restyle |
 
 Admin screens for Phase A (inside `/admin`): Products, Categories, Orders (status, payment proof, courier export), Media.

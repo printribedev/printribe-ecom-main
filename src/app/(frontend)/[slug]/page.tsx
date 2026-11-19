@@ -15,8 +15,6 @@ const COMING_SOON: Record<string, string> = {
   'design-studio': 'Design Studio',
   about: 'About Printribe',
   contact: 'Contact us',
-  terms: 'Terms and conditions',
-  privacy: 'Privacy policy',
 }
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { RenderHero } from '@/heros/RenderHero'
