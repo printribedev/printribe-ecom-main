@@ -4,7 +4,7 @@ const p = (text: string) => ({ type: 'p' as const, text })
 
 export const terms: LegalDoc = {
   title: 'Terms and Conditions',
-  updated: '23 July 2025',
+  updated: '19 November 2026',
   intro:
     'Welcome to Printribe. By accessing or using Printribe website or placing an order, you agree to the following Terms and Conditions. Please read them carefully before proceeding.',
   sections: [
@@ -20,7 +20,7 @@ export const terms: LegalDoc = {
       heading: '2. Custom Orders',
       blocks: [
         p('2.1. All merchandise is made-to-order based on the specifications you provide.'),
-        p('2.2. Production begins only after design approval and payment confirmation.'),
+        p('2.2. Production begins only after your payment is confirmed. For orders that include custom design work, production also begins only after you approve the design.'),
         p('2.3. Once approved, changes cannot be guaranteed and may incur additional costs.'),
         p('2.4. Minor design adjustments may be made to improve print output.'),
       ],
@@ -38,7 +38,7 @@ export const terms: LegalDoc = {
       blocks: [
         p('4.1. All prices are subject to change without prior notice.'),
         p('4.2. In the event of pricing errors, Printribe reserves the right to cancel the order and issue a refund.'),
-        p('4.3. Payments are accepted via Printribe approved secure bank transfers or third-party gateways.'),
+        p('4.3. Payments are made online through our payment partner, Razorpay (UPI, cards and netbanking). Printribe does not store your card or bank details.'),
       ],
     },
     {

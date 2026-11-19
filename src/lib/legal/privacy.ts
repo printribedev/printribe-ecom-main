@@ -6,7 +6,7 @@ const ul = (...items: string[]) => ({ type: 'ul' as const, items })
 
 export const privacy: LegalDoc = {
   title: 'Privacy Policy',
-  updated: '23 July 2025',
+  updated: '19 November 2026',
   intro:
     'At Printribe, your privacy matters. This Privacy Policy outlines how we collect, use, and safeguard your data when you interact with our website, services, and products. By using our platform, you consent to the practices described in this policy.',
   sections: [
@@ -60,7 +60,7 @@ export const privacy: LegalDoc = {
       heading: '5. Cookies and Tracking Technologies',
       blocks: [
         p('Our website uses cookies and similar technologies to:'),
-        ul('Enhance your browsing experience.', 'Analyze traffic and usage patterns.', 'Deliver personalized content and advertisements.'),
+        ul('Enhance your browsing experience.', 'Analyze traffic and usage patterns.', 'Keep the website secure and working properly.'),
         p('You can manage or disable cookies through your browser settings.'),
       ],
     },
