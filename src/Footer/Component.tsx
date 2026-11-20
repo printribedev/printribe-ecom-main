@@ -21,8 +21,8 @@ export async function Footer() {
         <div className="grid gap-10 md:grid-cols-[1.4fr_repeat(3,1fr)]">
           <div>
             <Link href="/" aria-label="Printribe home">
-              {/* The logo is white-on-dark here */}
-              <Logo className="brightness-0 invert" />
+              {/* Real logo colours, with white lettering for the dark footer */}
+              <Logo onDark />
             </Link>
             {data?.about && <p className="mt-4 max-w-xs">{data.about}</p>}
             {(contact?.email || contact?.phone) && (
