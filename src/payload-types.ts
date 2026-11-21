@@ -73,6 +73,7 @@ export interface Config {
     categories: Category;
     'product-categories': ProductCategory;
     products: Product;
+    'print-methods': PrintMethod;
     orders: Order;
     subscribers: Subscriber;
     users: User;
@@ -99,6 +100,7 @@ export interface Config {
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     'product-categories': ProductCategoriesSelect<false> | ProductCategoriesSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
+    'print-methods': PrintMethodsSelect<false> | PrintMethodsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
@@ -1153,6 +1155,16 @@ export interface Product {
          * Colour code such as #1D1D1F
          */
         hex: string;
+        /**
+         * Design studio only: one cut-out photo (no background) of this product in this colour for each side. Upload a PNG or WebP with a transparent background.
+         */
+        mockups?:
+          | {
+              view: 'front' | 'back' | 'left' | 'right';
+              image: number | Media;
+              id?: string | null;
+            }[]
+          | null;
         id?: string | null;
       }[]
     | null;
@@ -1166,6 +1178,99 @@ export interface Product {
       }[]
     | null;
   description?: string | null;
+  /**
+   * Lets customers design this product online. Add the colour photos in the Colours section above.
+   */
+  studio?: {
+    enabled?: boolean | null;
+    /**
+     * One row per side of the product (for example Front and Back), with the areas where printing is allowed.
+     */
+    views?:
+      | {
+          view: 'front' | 'back' | 'left' | 'right';
+          /**
+           * Where a design can be placed on this side.
+           */
+          areas?:
+            | {
+                /**
+                 * For example Chest, Full front, Left sleeve.
+                 */
+                name: string;
+                /**
+                 * Decides the print price (see Print methods).
+                 */
+                size: 'small' | 'medium' | 'large';
+                /**
+                 * Left edge, as % of the photo width.
+                 */
+                x: number;
+                /**
+                 * Top edge, as % of the photo height.
+                 */
+                y: number;
+                /**
+                 * Width, as % of the photo width.
+                 */
+                width: number;
+                /**
+                 * Height, as % of the photo height.
+                 */
+                height: number;
+                /**
+                 * Optional real size shown to customers, for example "Up to 30 x 35 cm".
+                 */
+                sizeNote?: string | null;
+                id?: string | null;
+              }[]
+            | null;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "print-methods".
+ */
+export interface PrintMethod {
+  id: number;
+  /**
+   * For example Screen printing, Embroidery, DTF.
+   */
+  title: string;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  /**
+   * Untick to hide this method from customers.
+   */
+  active?: boolean | null;
+  /**
+   * One or two lines shown to the customer, for example what it is best for.
+   */
+  description?: string | null;
+  /**
+   * Extra rupees per piece for one SMALL print area.
+   */
+  smallPrice: number;
+  /**
+   * Extra rupees per piece for one MEDIUM print area.
+   */
+  mediumPrice: number;
+  /**
+   * Extra rupees per piece for one LARGE print area.
+   */
+  largePrice: number;
+  /**
+   * Smaller numbers show first.
+   */
+  order?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1446,6 +1551,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'products';
         value: number | Product;
+      } | null)
+    | ({
+        relationTo: 'print-methods';
+        value: number | PrintMethod;
       } | null)
     | ({
         relationTo: 'orders';
@@ -2066,6 +2175,13 @@ export interface ProductsSelect<T extends boolean = true> {
     | {
         name?: T;
         hex?: T;
+        mockups?:
+          | T
+          | {
+              view?: T;
+              image?: T;
+              id?: T;
+            };
         id?: T;
       };
   sizes?:
@@ -2075,6 +2191,46 @@ export interface ProductsSelect<T extends boolean = true> {
         id?: T;
       };
   description?: T;
+  studio?:
+    | T
+    | {
+        enabled?: T;
+        views?:
+          | T
+          | {
+              view?: T;
+              areas?:
+                | T
+                | {
+                    name?: T;
+                    size?: T;
+                    x?: T;
+                    y?: T;
+                    width?: T;
+                    height?: T;
+                    sizeNote?: T;
+                    id?: T;
+                  };
+              id?: T;
+            };
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "print-methods_select".
+ */
+export interface PrintMethodsSelect<T extends boolean = true> {
+  title?: T;
+  generateSlug?: T;
+  slug?: T;
+  active?: T;
+  description?: T;
+  smallPrice?: T;
+  mediumPrice?: T;
+  largePrice?: T;
+  order?: T;
   updatedAt?: T;
   createdAt?: T;
 }

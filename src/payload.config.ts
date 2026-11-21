@@ -11,6 +11,7 @@ import { Media } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { Posts } from './collections/Posts'
 import { ProductCategories } from './collections/ProductCategories'
+import { PrintMethods } from './collections/PrintMethods'
 import { Products } from './collections/Products'
 import { Orders } from './collections/Orders'
 import { ShopSettings } from './globals/ShopSettings'
@@ -75,7 +76,7 @@ export default buildConfig({
     : sqliteAdapter({
         client: { url: process.env.DATABASE_URL || 'file:./printribe-dev.db' },
       }),
-  collections: [Pages, Posts, Media, Categories, ProductCategories, Products, Orders, Subscribers, Users],
+  collections: [Pages, Posts, Media, Categories, ProductCategories, Products, PrintMethods, Orders, Subscribers, Users],
   cors: [getServerSideURL()].filter(Boolean),
   globals: [Header, Footer, ShopSettings],
   plugins: [

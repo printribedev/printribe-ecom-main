@@ -3,6 +3,14 @@ import type { CollectionConfig } from 'payload'
 import { authenticated } from '../access/authenticated'
 import { slugField } from 'payload'
 
+/** The sides of a product a customer can design on. */
+const STUDIO_VIEWS = [
+  { label: 'Front', value: 'front' },
+  { label: 'Back', value: 'back' },
+  { label: 'Left', value: 'left' },
+  { label: 'Right', value: 'right' },
+]
+
 /** Everything the shop shows about a product. Prices are fixed, so customers see the final price. */
 export const Products: CollectionConfig = {
   slug: 'products',
@@ -86,6 +94,19 @@ export const Products: CollectionConfig = {
       fields: [
         { name: 'name', type: 'text', required: true },
         { name: 'hex', type: 'text', required: true, admin: { description: 'Colour code such as #1D1D1F' } },
+        {
+          name: 'mockups',
+          type: 'array',
+          label: 'Design studio photos',
+          admin: {
+            description:
+              'Design studio only: one cut-out photo (no background) of this product in this colour for each side. Upload a PNG or WebP with a transparent background.',
+          },
+          fields: [
+            { name: 'view', type: 'select', required: true, options: STUDIO_VIEWS },
+            { name: 'image', type: 'upload', relationTo: 'media', required: true },
+          ],
+        },
       ],
     },
     {
@@ -95,5 +116,63 @@ export const Products: CollectionConfig = {
       fields: [{ name: 'size', type: 'text', required: true }],
     },
     { name: 'description', type: 'textarea' },
+    {
+      name: 'studio',
+      type: 'group',
+      label: 'Design studio',
+      admin: { description: 'Lets customers design this product online. Add the colour photos in the Colours section above.' },
+      fields: [
+        {
+          name: 'enabled',
+          type: 'checkbox',
+          defaultValue: false,
+          label: 'Let customers design this product',
+        },
+        {
+          name: 'views',
+          type: 'array',
+          label: 'Sides and print areas',
+          admin: { description: 'One row per side of the product (for example Front and Back), with the areas where printing is allowed.' },
+          fields: [
+            { name: 'view', type: 'select', required: true, options: STUDIO_VIEWS },
+            {
+              name: 'areas',
+              type: 'array',
+              label: 'Print areas',
+              admin: { description: 'Where a design can be placed on this side.' },
+              fields: [
+                { name: 'name', type: 'text', required: true, admin: { description: 'For example Chest, Full front, Left sleeve.' } },
+                {
+                  name: 'size',
+                  type: 'select',
+                  required: true,
+                  defaultValue: 'medium',
+                  options: [
+                    { label: 'Small', value: 'small' },
+                    { label: 'Medium', value: 'medium' },
+                    { label: 'Large', value: 'large' },
+                  ],
+                  admin: { description: 'Decides the print price (see Print methods).' },
+                },
+                {
+                  type: 'row',
+                  fields: [
+                    { name: 'x', type: 'number', required: true, min: 0, max: 100, admin: { description: 'Left edge, as % of the photo width.' } },
+                    { name: 'y', type: 'number', required: true, min: 0, max: 100, admin: { description: 'Top edge, as % of the photo height.' } },
+                    { name: 'width', type: 'number', required: true, min: 1, max: 100, admin: { description: 'Width, as % of the photo width.' } },
+                    { name: 'height', type: 'number', required: true, min: 1, max: 100, admin: { description: 'Height, as % of the photo height.' } },
+                  ],
+                },
+                {
+                  name: 'sizeNote',
+                  type: 'text',
+                  admin: { description: 'Optional real size shown to customers, for example "Up to 30 x 35 cm".' },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
   ],
 }
