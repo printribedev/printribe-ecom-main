@@ -51,8 +51,23 @@ async function seed() {
   const col = (...names: (keyof typeof palette)[]) => names.map((n) => ({ name: n, hex: palette[n] }))
   const sizes = ['S', 'M', 'L', 'XL', 'XXL'].map((size) => ({ size }))
 
+  // Design studio set-up for the sample T-shirt: print areas are % of the photo. No photos yet, so the studio shows a plain placeholder shirt.
+  const tshirtStudio = {
+    enabled: true,
+    views: [
+      {
+        view: 'front' as const,
+        areas: [
+          { name: 'Left chest', size: 'small' as const, x: 53, y: 20, width: 15, height: 12, sizeNote: 'Up to 10 x 10 cm' },
+          { name: 'Front centre', size: 'large' as const, x: 30, y: 36, width: 40, height: 45, sizeNote: 'Up to 30 x 35 cm' },
+        ],
+      },
+      { view: 'back' as const, areas: [{ name: 'Full back', size: 'large' as const, x: 30, y: 20, width: 40, height: 55, sizeNote: 'Up to 30 x 40 cm' }] },
+    ],
+  }
+
   const samples = [
-    { title: '[Sample] Classic T-Shirt', category: apparel, subCategory: tshirts, price: 399, minQuantity: 1, priceTiers: [{ minQuantity: 10, price: 369 }, { minQuantity: 25, price: 339 }, { minQuantity: 50, price: 319 }], deliveryDays: '10 to 15 days', colours: col('Black', 'White', 'Navy', 'Sky blue', 'Grey') },
+    { title: '[Sample] Classic T-Shirt', studio: tshirtStudio, category: apparel, subCategory: tshirts, price: 399, minQuantity: 1, priceTiers: [{ minQuantity: 10, price: 369 }, { minQuantity: 25, price: 339 }, { minQuantity: 50, price: 319 }], deliveryDays: '10 to 15 days', colours: col('Black', 'White', 'Navy', 'Sky blue', 'Grey') },
     { title: '[Sample] Premium T-Shirt', category: apparel, subCategory: tshirts, price: 549, minQuantity: 5, deliveryDays: '10 to 15 days', colours: col('Black', 'White', 'Maroon') },
     { title: '[Sample] Classic Polo', category: apparel, subCategory: polos, price: 599, minQuantity: 10, priceTiers: [{ minQuantity: 25, price: 559 }, { minQuantity: 50, price: 519 }], deliveryDays: '10 to 15 days', colours: col('Navy', 'White', 'Black', 'Sky blue') },
     { title: '[Sample] Premium Hoodie', category: apparel, subCategory: hoodies, price: 1199, minQuantity: 5, deliveryDays: '12 to 15 days', colours: col('Black', 'Grey', 'Navy') },

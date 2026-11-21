@@ -31,8 +31,8 @@ The server always recalculates the price. The browser is never trusted.
 - Every schema change is additive, and each one needs a migration (`npm run payload -- migrate:create`).
 
 ## Build order
-1. **Admin foundation** (print methods, product studio settings, mockup uploads).
-2. **Editor** (canvas, upload, text, move/resize, print-area limits, colour and side switching).
+1. **Admin foundation** (print methods, product studio settings, mockup uploads). DONE.
+2. **Editor** (canvas, upload, text, move/resize, print-area limits, colour and side switching). DONE, at `/design/<product-slug>`. Uses a built-in placeholder shirt until real photos are uploaded. Designs are not saved yet.
 3. **Pricing and saving** (live price, save design and previews to R2, server-side price check).
 4. **Checkout link** (design travels into the order and checkout, payment as today).
 5. **Order admin** (view designs, download print files).

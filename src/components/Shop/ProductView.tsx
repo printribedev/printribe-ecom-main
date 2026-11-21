@@ -15,6 +15,8 @@ export type ProductViewData = {
   images: { url: string; alt: string }[]
   colours: { name: string; hex: string }[]
   sizes: string[]
+  /** True when customers can design this product in the design studio. */
+  studio?: boolean
 }
 
 export const ProductView: React.FC<{ p: ProductViewData }> = ({ p }) => {
@@ -198,6 +200,14 @@ export const ProductView: React.FC<{ p: ProductViewData }> = ({ p }) => {
           >
             Choose at least {p.minQty} {p.minQty === 1 ? 'piece' : 'pieces'}
           </button>
+        )}
+        {p.studio && (
+          <Link
+            href={`/design/${p.slug}`}
+            className="mt-3 block rounded-full bg-ink py-3.5 text-center text-[17px] font-medium text-white hover:bg-ink/90"
+          >
+            Design it yourself
+          </Link>
         )}
         <Link
           href="/contact"

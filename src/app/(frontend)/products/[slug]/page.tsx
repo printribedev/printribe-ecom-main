@@ -53,6 +53,7 @@ export default async function ProductPage({ params }: Args) {
     }),
     colours: (product.colours || []).map((c) => ({ name: c.name, hex: c.hex })),
     sizes: (product.sizes || []).map((s) => s.size),
+    studio: !!product.studio?.enabled && (product.studio.views || []).some((v) => (v.areas || []).length > 0),
   }
 
   // More from the same category
