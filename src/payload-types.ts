@@ -1221,7 +1221,15 @@ export interface Product {
                  */
                 height: number;
                 /**
-                 * Optional real size shown to customers, for example "Up to 30 x 35 cm".
+                 * REAL width of this print area in inches. Used to show customers the size of their design.
+                 */
+                widthIn?: number | null;
+                /**
+                 * REAL height of this print area in inches.
+                 */
+                heightIn?: number | null;
+                /**
+                 * Optional note shown to customers, for example "Best for small logos".
                  */
                 sizeNote?: string | null;
                 id?: string | null;
@@ -1269,6 +1277,14 @@ export interface PrintMethod {
    * Extra rupees per piece for one LARGE print area.
    */
   largePrice: number;
+  /**
+   * Largest print width this method can do, in inches. Leave empty for no limit.
+   */
+  maxWidthIn?: number | null;
+  /**
+   * Largest print height this method can do, in inches. Leave empty for no limit.
+   */
+  maxHeightIn?: number | null;
   /**
    * Smaller numbers show first.
    */
@@ -2294,6 +2310,8 @@ export interface ProductsSelect<T extends boolean = true> {
                     y?: T;
                     width?: T;
                     height?: T;
+                    widthIn?: T;
+                    heightIn?: T;
                     sizeNote?: T;
                     id?: T;
                   };
@@ -2316,6 +2334,8 @@ export interface PrintMethodsSelect<T extends boolean = true> {
   smallPrice?: T;
   mediumPrice?: T;
   largePrice?: T;
+  maxWidthIn?: T;
+  maxHeightIn?: T;
   order?: T;
   updatedAt?: T;
   createdAt?: T;

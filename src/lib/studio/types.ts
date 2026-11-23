@@ -14,6 +14,9 @@ export type StudioArea = {
   width: number
   height: number
   sizeNote: string
+  /** Real size of the print area in inches (shown to customers). Empty if the owner has not set it. */
+  widthIn: number | null
+  heightIn: number | null
 }
 
 export type StudioMethod = {
@@ -23,6 +26,9 @@ export type StudioMethod = {
   small: number
   medium: number
   large: number
+  /** Largest print this method can do, in inches. Null means no limit. */
+  maxWidthIn: number | null
+  maxHeightIn: number | null
 }
 
 /** Everything the studio needs, prepared on the server and handed to the browser. */

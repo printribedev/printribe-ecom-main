@@ -1,6 +1,7 @@
 import * as migration_20261113_173005_initial from './20261113_173005_initial';
 import * as migration_20261121_082208_studio_foundation from './20261121_082208_studio_foundation';
 import * as migration_20261121_120228_studio_designs from './20261121_120228_studio_designs';
+import * as migration_20261123_152735_studio_inches from './20261123_152735_studio_inches';
 
 export const migrations = [
   {
@@ -16,6 +17,11 @@ export const migrations = [
   {
     up: migration_20261121_120228_studio_designs.up,
     down: migration_20261121_120228_studio_designs.down,
-    name: '20261121_120228_studio_designs'
+    name: '20261121_120228_studio_designs',
+  },
+  {
+    up: migration_20261123_152735_studio_inches.up,
+    down: migration_20261123_152735_studio_inches.down,
+    name: '20261123_152735_studio_inches'
   },
 ];

@@ -38,6 +38,13 @@ export const PrintMethods: CollectionConfig = {
       ],
     },
     {
+      type: 'row',
+      fields: [
+        { name: 'maxWidthIn', type: 'number', min: 0.5, admin: { description: 'Largest print width this method can do, in inches. Leave empty for no limit.' } },
+        { name: 'maxHeightIn', type: 'number', min: 0.5, admin: { description: 'Largest print height this method can do, in inches. Leave empty for no limit.' } },
+      ],
+    },
+    {
       name: 'order',
       type: 'number',
       defaultValue: 0,

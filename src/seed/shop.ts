@@ -58,11 +58,11 @@ async function seed() {
       {
         view: 'front' as const,
         areas: [
-          { name: 'Left chest', size: 'small' as const, x: 53, y: 20, width: 15, height: 12, sizeNote: 'Up to 10 x 10 cm' },
-          { name: 'Front centre', size: 'large' as const, x: 30, y: 36, width: 40, height: 45, sizeNote: 'Up to 30 x 35 cm' },
+          { name: 'Left chest', size: 'small' as const, x: 53, y: 20, width: 15, height: 12, sizeNote: '', widthIn: 4, heightIn: 4 },
+          { name: 'Front centre', size: 'large' as const, x: 30, y: 36, width: 40, height: 45, sizeNote: '', widthIn: 12, heightIn: 14 },
         ],
       },
-      { view: 'back' as const, areas: [{ name: 'Full back', size: 'large' as const, x: 30, y: 20, width: 40, height: 55, sizeNote: 'Up to 30 x 40 cm' }] },
+      { view: 'back' as const, areas: [{ name: 'Full back', size: 'large' as const, x: 30, y: 20, width: 40, height: 55, sizeNote: '', widthIn: 12, heightIn: 16 }] },
     ],
   }
 

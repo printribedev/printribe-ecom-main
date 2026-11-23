@@ -51,6 +51,8 @@ export default async function DesignPage({ params, searchParams }: Args) {
           width: a.width,
           height: a.height,
           sizeNote: a.sizeNote || '',
+          widthIn: a.widthIn ?? null,
+          heightIn: a.heightIn ?? null,
         }),
       ),
     }))
@@ -92,6 +94,8 @@ export default async function DesignPage({ params, searchParams }: Args) {
       small: m.smallPrice,
       medium: m.mediumPrice,
       large: m.largePrice,
+      maxWidthIn: m.maxWidthIn ?? null,
+      maxHeightIn: m.maxHeightIn ?? null,
     })),
   }
   if (data.colours.length === 0) data.colours = [{ name: 'Default', hex: '#FFFFFF', mockups: {} }]

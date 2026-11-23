@@ -59,6 +59,8 @@ export async function POST(req: Request) {
       width: a.width,
       height: a.height,
       sizeNote: a.sizeNote || '',
+      widthIn: a.widthIn ?? null,
+      heightIn: a.heightIn ?? null,
     }))
   }
 

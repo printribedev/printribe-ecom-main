@@ -164,9 +164,16 @@ export const Products: CollectionConfig = {
                   ],
                 },
                 {
+                  type: 'row',
+                  fields: [
+                    { name: 'widthIn', type: 'number', min: 0.5, admin: { description: 'REAL width of this print area in inches. Used to show customers the size of their design.' } },
+                    { name: 'heightIn', type: 'number', min: 0.5, admin: { description: 'REAL height of this print area in inches.' } },
+                  ],
+                },
+                {
                   name: 'sizeNote',
                   type: 'text',
-                  admin: { description: 'Optional real size shown to customers, for example "Up to 30 x 35 cm".' },
+                  admin: { description: 'Optional note shown to customers, for example "Best for small logos".' },
                 },
               ],
             },

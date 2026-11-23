@@ -12,6 +12,8 @@ import { VIEW_LABELS, type StudioArea, type StudioProduct, type StudioViewKey } 
 type Fabric = typeof import('fabric')
 type Tagged = FabricObject & { areaKey?: string }
 type Sel = { type: 'text' | 'image'; fill: string; fontFamily: string; fontSize: number } | null
+/** Where the selected element sits on the canvas (canvas units) and how big it prints, in inches. */
+type Box = { l: number; t: number; w: number; h: number; wIn: number | null; hIn: number | null; areaKey: string }
 
 /** The design is drawn on a canvas that is always this many units wide. The screen just scales it. */
 const LW = 1000
@@ -20,8 +22,11 @@ const MAX_IMAGE_PX = 1600
 const MAX_FILE_MB = 15
 
 const rupees = (n: number) => '₹' + Math.round(n).toLocaleString('en-IN')
-const btn =
-  'inline-flex items-center gap-1.5 rounded-full border border-border bg-white px-3.5 py-2 text-sm text-ink hover:bg-[#F3F4F6] disabled:cursor-not-allowed disabled:opacity-40'
+const fmtIn = (n: number) => String(Math.round(n * 10) / 10)
+
+/** True when a design of this size (inches) is bigger than the print method can do. */
+const tooBig = (w: number, h: number, m?: { maxWidthIn: number | null; maxHeightIn: number | null } | null) =>
+  !!m && !!((m.maxWidthIn && w > m.maxWidthIn + 0.05) || (m.maxHeightIn && h > m.maxHeightIn + 0.05))
 
 /** Shrinks a big photo so the editor stays fast. Returns a short blob link instead of a huge data string. */
 async function prepareImage(file: File): Promise<string> {
@@ -86,6 +91,12 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
   const [saveInfo, setSaveInfo] = useState<{ perPiece: number; total: number } | null>(null)
   const [dirty, setDirty] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [zoom, setZoom] = useState(1)
+  const [menu, setMenu] = useState<null | 'colour' | 'area' | 'add' | 'method'>(null)
+  const [box, setBox] = useState<Box | null>(null)
+  const [areaSizes, setAreaSizes] = useState<Record<string, { w: number; h: number }>>({})
+  const [printedViews, setPrintedViews] = useState<string[]>([])
+  const [orderOpen, setOrderOpen] = useState(true)
 
   const canvasEl = useRef<HTMLCanvasElement>(null)
   const canvasRef = useRef<Canvas | null>(null)
@@ -95,6 +106,7 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
   const armedRef = useRef(false)
   const histRef = useRef<{ stack: string[]; idx: number }>({ stack: [], idx: 0 })
   const loadingRef = useRef(false)
+  const fileInput = useRef<HTMLInputElement>(null)
 
   const colour = p.colours[colourIdx] || { name: '', hex: '#FFFFFF', mockups: {} }
   const viewDef = p.views.find((v) => v.view === view) || p.views[0]
@@ -146,12 +158,16 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
 
   const refreshUsed = useCallback(() => {
     const keys = new Set<string>()
-    for (const json of Object.values(designsRef.current)) {
+    const printed: string[] = []
+    for (const [v, json] of Object.entries(designsRef.current)) {
       try {
-        for (const o of JSON.parse(json).objects || []) if (o.areaKey) keys.add(o.areaKey)
+        const objs = JSON.parse(json).objects || []
+        if (objs.length) printed.push(v)
+        for (const o of objs) if (o.areaKey) keys.add(o.areaKey)
       } catch {}
     }
     setUsedKeys([...keys])
+    setPrintedViews(printed)
   }, [])
 
   const setHist = useCallback(() => {
@@ -171,6 +187,24 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
     if (h.stack.length > 30) h.stack.shift()
     h.idx = h.stack.length - 1
     designsRef.current[viewRef.current] = json
+    // Largest printed size (inches) in each print area on this side
+    const sizes: Record<string, { w: number; h: number }> = {}
+    for (const o of c.getObjects()) {
+      const a = areasRef.current.find((x) => x.key === (o as Tagged).areaKey)
+      if (!a || !a.widthIn || !a.heightIn) continue
+      o.setCoords()
+      const br = o.getBoundingRect()
+      const { aw, ah } = areaRect(a)
+      const w = (br.width / aw) * a.widthIn
+      const h = (br.height / ah) * a.heightIn
+      const cur = sizes[a.key]
+      sizes[a.key] = { w: Math.max(cur?.w || 0, w), h: Math.max(cur?.h || 0, h) }
+    }
+    setAreaSizes((prev) => {
+      const next = { ...prev }
+      for (const a of areasRef.current) delete next[a.key]
+      return { ...next, ...sizes }
+    })
     if (armedRef.current) setDirty(true)
     setHist()
     refreshUsed()
@@ -190,10 +224,32 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
     }
   }, [])
 
+  /** Works out where the selected element is and how big it will print, in inches. */
+  const updateBox = useCallback(() => {
+    const c = canvasRef.current
+    const o = c?.getActiveObject() as Tagged | undefined
+    if (!c || !o) return setBox(null)
+    const a = areasRef.current.find((x) => x.key === o.areaKey)
+    o.setCoords()
+    const br = o.getBoundingRect()
+    let wIn: number | null = null
+    let hIn: number | null = null
+    if (a && a.widthIn && a.heightIn) {
+      const { aw, ah } = areaRect(a)
+      wIn = (br.width / aw) * a.widthIn
+      hIn = (br.height / ah) * a.heightIn
+    }
+    setBox({ l: br.left, t: br.top, w: br.width, h: br.height, wIn, hIn, areaKey: o.areaKey || '' })
+  }, [])
+
   const syncSel = useCallback(() => {
     const f = fabricRef.current
     const o = canvasRef.current?.getActiveObject()
-    if (!f || !o) return setSel(null)
+    if (!f || !o) {
+      setBox(null)
+      return setSel(null)
+    }
+    updateBox()
     const key = (o as Tagged).areaKey
     if (key) setActiveArea(key)
     if (o instanceof f.Textbox) {
@@ -215,9 +271,30 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
       const cv = new fabric.Canvas(canvasEl.current, { width: LW, height: Math.round(LW / 0.8), preserveObjectStacking: true, selection: false })
       c = cv
       canvasRef.current = cv
-      cv.on('object:moving', (e) => constrain(e.target))
-      cv.on('object:scaling', (e) => constrain(e.target))
-      cv.on('object:rotating', (e) => constrain(e.target))
+      cv.on('object:moving', (e) => {
+        constrain(e.target)
+        updateBox()
+      })
+      cv.on('object:scaling', (e) => {
+        constrain(e.target)
+        updateBox()
+      })
+      cv.on('object:rotating', (e) => {
+        constrain(e.target)
+        updateBox()
+      })
+      cv.on('text:changed', () => updateBox())
+      // Clicking an empty spot inside a print area makes it the area new elements go to
+      cv.on('mouse:down', (e) => {
+        if (e.target) return
+        const pt = cv.getScenePoint(e.e)
+        const W = cv.getWidth()
+        const H = cv.getHeight()
+        const hit = areasRef.current.find(
+          (a) => pt.x >= (a.x / 100) * W && pt.x <= ((a.x + a.width) / 100) * W && pt.y >= (a.y / 100) * H && pt.y <= ((a.y + a.height) / 100) * H,
+        )
+        if (hit) setActiveArea(hit.key)
+      })
       cv.on('object:modified', (e) => {
         constrain(e.target)
         cv.requestRenderAll()
@@ -231,7 +308,10 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
       })
       cv.on('selection:created', syncSel)
       cv.on('selection:updated', syncSel)
-      cv.on('selection:cleared', () => setSel(null))
+      cv.on('selection:cleared', () => {
+        setSel(null)
+        setBox(null)
+      })
       if (!designsRef.current[viewRef.current]) commit()
       refreshUsed()
       armedRef.current = true
@@ -281,6 +361,7 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
       histRef.current = { stack: [JSON.stringify(c.toObject(['areaKey']))], idx: 0 }
       setHist()
       setSel(null)
+      setBox(null)
     })()
     // Only when the side changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -395,6 +476,7 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
     setHist()
     refreshUsed()
     setSel(null)
+    setBox(null)
   }
 
   const setTextProp = (k: 'fill' | 'fontFamily' | 'fontSize', v: string | number) => {
@@ -428,6 +510,10 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
   }, [])
 
   /* ---------- saving ---------- */
+
+  useEffect(() => {
+    if (window.matchMedia('(max-width: 639px)').matches) setOrderOpen(false)
+  }, [])
 
   useEffect(() => {
     if (armedRef.current) setDirty(true)
@@ -485,6 +571,7 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
 
   const save = async () => {
     if (saving || !canvasRef.current) return
+    if (oversize.length) return setNotice(`${oversize[0].name} is too large for this print method. Make it smaller or choose another method.`)
     setNotice('')
     setSaving('Saving your design…')
     try {
@@ -540,207 +627,360 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
   const base = unitPriceFor(p.price, p.tiers, qty)
   const perPiece = base + extras
   const total = perPiece * qty
+  const methodNameFor = (key: string) => p.methods.find((m) => m.id === methodFor(key))?.title || ''
+  const extraFor = (a: StudioArea) => {
+    const m = p.methods.find((x) => x.id === methodFor(a.key))
+    return m ? m[a.size] : 0
+  }
+  // Areas whose design is bigger than the chosen print method allows
+  const oversize = usedAreas.filter((a) => {
+    const sz = areaSizes[a.key]
+    return !!sz && tooBig(sz.w, sz.h, p.methods.find((m) => m.id === methodFor(a.key)))
+  })
 
   /* ---------- screen ---------- */
 
-  return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-[#F3F4F6] text-ink">
-      <header className="flex items-center justify-between gap-3 border-b border-border bg-white px-4 py-3">
-        <Link href={`/products/${p.slug}`} className="text-[15px] text-body hover:text-ink">
-          ← Back to product
-        </Link>
-        <div className="font-heading truncate text-[17px]">{p.title}</div>
-        <div className="hidden text-sm text-muted-foreground sm:block">Design studio</div>
-      </header>
+  const selAreaKey = box?.areaKey || activeArea
+  const selArea = allAreas.find((a) => a.key === selAreaKey)
+  const selMethod = p.methods.find((m) => m.id === methodFor(selAreaKey))
+  const activeAreaObj = areas.find((a) => a.key === activeArea) || areas[0]
+  const printedIn = (v: StudioViewKey) => printedViews.includes(v)
+  const boxOver = !!box && box.wIn != null && box.hIn != null && tooBig(box.wIn, box.hIn, selMethod)
+  const canvasH = Math.round(LW / ar)
 
-      <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[minmax(0,1fr)_380px] lg:overflow-hidden">
-        {/* Canvas side */}
-        <main className="flex flex-col items-center gap-3 px-4 py-4 lg:min-h-0 lg:overflow-y-auto">
-          <div className="flex w-full flex-wrap items-center justify-center gap-2">
-            <button type="button" className={btn} onClick={addText} disabled={!ready || !areas.length}>
-              + Add text
+  const dots = { backgroundImage: 'radial-gradient(#C8C8CC 1.4px, transparent 1.4px)', backgroundSize: '26px 26px' }
+  const bar = 'rounded-full bg-[#3B3C41]/95 text-white shadow-[0_8px_28px_rgba(0,0,0,.28)] backdrop-blur'
+  const barBtn =
+    'inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-[15px] hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-transparent'
+  const menuBox = 'absolute left-0 top-[calc(100%+10px)] z-40 min-w-[240px] rounded-2xl bg-[#3B3C41] p-2 text-white shadow-[0_14px_44px_rgba(0,0,0,.4)]'
+  const menuRow = 'flex w-full items-center justify-between gap-4 rounded-xl px-3 py-2.5 text-left text-[15px] hover:bg-white/10'
+  const whitePill = 'rounded-full bg-white shadow-[0_3px_14px_rgba(0,0,0,.14)]'
+  const chev = <span aria-hidden className="text-xs opacity-70">▾</span>
+
+  return (
+    <div className="fixed inset-0 z-[100] overflow-hidden bg-[#EFEFEF] text-ink" style={dots}>
+      {menu && <div className="fixed inset-0 z-20" onClick={() => setMenu(null)} aria-hidden />}
+
+      <input
+        ref={fileInput}
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+        className="sr-only"
+        tabIndex={-1}
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) void addImage(f)
+          e.target.value = ''
+        }}
+      />
+
+      {/* Top left: back and logo */}
+      <div className={`absolute left-3 top-3 z-30 flex items-center gap-3 py-2.5 pl-4 pr-5 ${whitePill}`}>
+        <Link href={`/products/${p.slug}`} aria-label="Back to product" className="text-xl leading-none text-body hover:text-ink">
+          ←
+        </Link>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/printribe-logo.png" alt="Printribe" className="h-5 w-auto" />
+      </div>
+
+      {/* Top right: link to come back to the design */}
+      {savedToken && !dirty && (
+        <button type="button" onClick={copyLink} className={`absolute right-3 top-3 z-30 px-5 py-3 text-[15px] font-medium hover:bg-[#F3F4F6] ${whitePill}`}>
+          {copied ? 'Link copied' : 'Copy design link'}
+        </button>
+      )}
+
+      {/* Main toolbar */}
+      <div className="absolute left-1/2 top-[68px] z-30 -translate-x-1/2 sm:top-3">
+        <div className={`flex items-center gap-0.5 p-1.5 ${bar}`}>
+          {/* Colour */}
+          <div className="relative">
+            <button type="button" className={barBtn} onClick={() => setMenu(menu === 'colour' ? null : 'colour')} aria-label="Product colour">
+              <span className="h-5 w-5 rounded-md border border-white/40" style={{ background: colour.hex }} />
+              <span className="hidden max-w-[110px] truncate sm:inline">{colour.name}</span>
+              {chev}
             </button>
-            <label className={`${btn} cursor-pointer`}>
-              + Add image
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                className="sr-only"
-                disabled={!ready || !areas.length}
-                onChange={(e) => {
-                  const f = e.target.files?.[0]
-                  if (f) void addImage(f)
-                  e.target.value = ''
-                }}
-              />
-            </label>
-            <button type="button" className={btn} onClick={() => step(-1)} disabled={!hist.undo}>
-              Undo
-            </button>
-            <button type="button" className={btn} onClick={() => step(1)} disabled={!hist.redo}>
-              Redo
-            </button>
-            <button type="button" className={btn} onClick={duplicate} disabled={!sel}>
-              Duplicate
-            </button>
-            <button type="button" className={btn} onClick={centre} disabled={!sel}>
-              Centre
-            </button>
-            <button type="button" className={btn} onClick={removeSelected} disabled={!sel}>
-              Delete
-            </button>
+            {menu === 'colour' && (
+              <div className={menuBox}>
+                {p.colours.map((c, i) => (
+                  <button
+                    key={c.name}
+                    type="button"
+                    className={menuRow}
+                    onClick={() => {
+                      setColourIdx(i)
+                      setMenu(null)
+                    }}
+                  >
+                    <span className="flex items-center gap-3">
+                      <span className="h-5 w-5 rounded-md border border-white/40" style={{ background: c.hex }} />
+                      {c.name}
+                    </span>
+                    {i === colourIdx && <span aria-hidden>✓</span>}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {sel?.type === 'text' && (
-            <div className="flex w-full max-w-[760px] flex-wrap items-center justify-center gap-3 rounded-xl border border-border bg-white px-4 py-2.5 text-sm">
-              <label className="flex items-center gap-2">
-                Font
-                <select value={sel.fontFamily} onChange={(e) => setTextProp('fontFamily', e.target.value)} className="rounded-lg border border-border px-2 py-1.5">
+          <span className="mx-1 h-6 w-px bg-white/20" />
+
+          {/* Print area */}
+          {areas.length > 0 && (
+            <div className="relative">
+              <button type="button" className={barBtn} onClick={() => setMenu(menu === 'area' ? null : 'area')} aria-label="Print area">
+                <span className="max-w-[120px] truncate">{activeAreaObj?.name}</span>
+                {chev}
+              </button>
+              {menu === 'area' && (
+                <div className={menuBox}>
+                  <p className="px-3 pb-1 pt-1.5 text-xs uppercase tracking-wide text-white/50">New elements go in</p>
+                  {areas.map((a) => (
+                    <button
+                      key={a.key}
+                      type="button"
+                      className={menuRow}
+                      onClick={() => {
+                        setActiveArea(a.key)
+                        setMenu(null)
+                      }}
+                    >
+                      <span>
+                        {a.name}
+                        {a.widthIn && a.heightIn ? <span className="block text-sm text-white/55">{fmtIn(a.widthIn)} × {fmtIn(a.heightIn)} in</span> : null}
+                      </span>
+                      {a.key === activeArea && <span aria-hidden>✓</span>}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Add element */}
+          <div className="relative">
+            <button type="button" className={barBtn} onClick={() => setMenu(menu === 'add' ? null : 'add')} disabled={!ready || !areas.length}>
+              <span aria-hidden className="text-lg leading-none">+</span>
+              <span className="hidden sm:inline">Add element</span>
+              {chev}
+            </button>
+            {menu === 'add' && (
+              <div className={menuBox}>
+                <button
+                  type="button"
+                  className={menuRow}
+                  onClick={() => {
+                    setMenu(null)
+                    fileInput.current?.click()
+                  }}
+                >
+                  Image
+                </button>
+                <button
+                  type="button"
+                  className={menuRow}
+                  onClick={() => {
+                    setMenu(null)
+                    addText()
+                  }}
+                >
+                  Text
+                </button>
+              </div>
+            )}
+          </div>
+
+          <span className="mx-1 hidden h-6 w-px bg-white/20 sm:block" />
+          <button type="button" className={barBtn} onClick={duplicate} disabled={!sel} aria-label="Duplicate">
+            <span className="hidden sm:inline">Duplicate</span>
+            <span className="sm:hidden" aria-hidden>⧉</span>
+          </button>
+          <button type="button" className={barBtn} onClick={centre} disabled={!sel} aria-label="Centre in print area">
+            <span className="hidden sm:inline">Centre</span>
+            <span className="sm:hidden" aria-hidden>◎</span>
+          </button>
+          <button type="button" className={barBtn} onClick={removeSelected} disabled={!sel} aria-label="Delete">
+            <span className="hidden sm:inline">Delete</span>
+            <span className="sm:hidden" aria-hidden>🗑</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Selected element toolbar */}
+      {sel && (
+        <div className="absolute left-1/2 top-[124px] z-30 -translate-x-1/2 sm:top-[72px]">
+          <div className={`flex items-center gap-1 p-1.5 ${bar}`}>
+            <div className="relative">
+              <button type="button" className={barBtn} onClick={() => setMenu(menu === 'method' ? null : 'method')} disabled={p.methods.length === 0}>
+                <span aria-hidden>✎</span>
+                <span className="max-w-[150px] truncate">{selMethod ? selMethod.title : 'Print method'}</span>
+                {chev}
+              </button>
+              {menu === 'method' && (
+                <div className={`${menuBox} min-w-[320px]`}>
+                  <p className="px-3 pb-1 pt-1.5 text-xs uppercase tracking-wide text-white/50">Print method{selArea ? ` for ${selArea.name}` : ''}</p>
+                  {p.methods.map((m) => {
+                    const extra = selArea ? m[selArea.size] : 0
+                    const over = box && box.wIn != null && box.hIn != null && tooBig(box.wIn, box.hIn, m)
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        className={menuRow}
+                        onClick={() => {
+                          if (selAreaKey) setMethodByArea((cur) => ({ ...cur, [selAreaKey]: m.id }))
+                          setMenu(null)
+                        }}
+                      >
+                        <span>
+                          {m.title}
+                          <span className={`block text-sm ${over ? 'text-[#FCA5A5]' : 'text-white/55'}`}>
+                            {over ? 'Design is too large for this method' : m.maxWidthIn && m.maxHeightIn ? `Up to ${fmtIn(m.maxWidthIn)} × ${fmtIn(m.maxHeightIn)} in` : 'No size limit'}
+                          </span>
+                        </span>
+                        <span className="flex items-center gap-2 whitespace-nowrap text-[15px]">
+                          {rupees(extra)}
+                          {m.id === selMethod?.id && <span aria-hidden>✓</span>}
+                        </span>
+                      </button>
+                    )
+                  })}
+                  <p className="px-3 pb-1.5 pt-1 text-xs text-white/45">Price shown is extra per piece for this print area.</p>
+                </div>
+              )}
+            </div>
+
+            {sel.type === 'text' && (
+              <>
+                <span className="mx-1 h-6 w-px bg-white/20" />
+                <label className="flex cursor-pointer items-center gap-2 rounded-full px-3 py-2 hover:bg-white/10" aria-label="Text colour">
+                  <span className="relative h-5 w-5 overflow-hidden rounded-md border border-white/40" style={{ background: sel.fill }}>
+                    <input type="color" value={sel.fill} onChange={(e) => setTextProp('fill', e.target.value)} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
+                  </span>
+                  <span className="hidden sm:inline">Colour</span>
+                </label>
+                <select
+                  value={sel.fontFamily}
+                  onChange={(e) => setTextProp('fontFamily', e.target.value)}
+                  aria-label="Font"
+                  className="max-w-[130px] cursor-pointer rounded-full bg-transparent px-2 py-2 text-[15px] hover:bg-white/10 focus:outline-none"
+                >
                   {FONTS.map((f) => (
-                    <option key={f}>{f}</option>
+                    <option key={f} className="text-ink">
+                      {f}
+                    </option>
                   ))}
                 </select>
-              </label>
-              <label className="flex items-center gap-2">
-                Size
                 <input
                   type="number"
                   min={8}
                   max={400}
                   value={sel.fontSize}
                   onChange={(e) => setTextProp('fontSize', Math.max(8, Number(e.target.value) || 8))}
-                  className="w-20 rounded-lg border border-border px-2 py-1.5"
+                  aria-label="Font size"
+                  className="w-16 rounded-full bg-white/10 px-3 py-1.5 text-[15px] text-white focus:outline-none"
                 />
-              </label>
-              <label className="flex items-center gap-2">
-                Colour
-                <input type="color" value={sel.fill} onChange={(e) => setTextProp('fill', e.target.value)} className="h-8 w-10 cursor-pointer rounded border border-border" />
-              </label>
-              <span className="text-muted-foreground">Double-click the text on the product to edit it.</span>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {notice && (
+        <p role="alert" className="absolute left-1/2 top-[176px] z-30 max-w-[92vw] -translate-x-1/2 rounded-full bg-error px-5 py-2.5 text-center text-sm text-white shadow-lg sm:top-[130px]">
+          {notice}
+        </p>
+      )}
+
+      {/* The product, with the design on it */}
+      <div className="absolute inset-0 flex items-center justify-center px-3 pb-[200px] pt-[130px] sm:pb-24 sm:pt-[76px]">
+        <div
+          className="relative"
+          style={{ aspectRatio: String(ar), width: `min(94vw, calc((100dvh - 200px) * ${ar}))`, transform: `scale(${zoom})`, transformOrigin: 'center' }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={mockupSrc}
+            alt={`${p.title}, ${colour.name}, ${VIEW_LABELS[view]}`}
+            className="absolute inset-0 h-full w-full select-none object-contain drop-shadow-[0_18px_22px_rgba(0,0,0,.18)]"
+            draggable={false}
+          />
+          {areas.map((a) => (
+            <div
+              key={a.key}
+              aria-hidden
+              className={`pointer-events-none absolute rounded-sm border-2 border-dashed ${a.key === activeArea ? 'border-sky bg-sky/5' : 'border-[#9CA3AF]'}`}
+              style={{ left: `${a.x}%`, top: `${a.y}%`, width: `${a.width}%`, height: `${a.height}%` }}
+            >
+              <span className={`absolute -top-5 left-0 whitespace-nowrap text-[11px] ${a.key === activeArea ? 'text-sky' : 'text-[#6B7280]'}`}>
+                {a.name}
+                {a.widthIn && a.heightIn ? ` · ${fmtIn(a.widthIn)} × ${fmtIn(a.heightIn)} in` : ''}
+              </span>
+            </div>
+          ))}
+          {/* Fabric moves the canvas into its own container, so React gets a wrapper it never changes inside */}
+          <div className="absolute inset-0">
+            <canvas ref={canvasEl} />
+          </div>
+          {box && box.wIn != null && box.hIn != null && (
+            <div
+              className={`pointer-events-none absolute z-30 -translate-x-1/2 whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium text-white ${boxOver ? 'bg-error' : 'bg-sky'}`}
+              style={{ left: `${((box.l + box.w / 2) / LW) * 100}%`, top: `calc(${((box.t + box.h) / canvasH) * 100}% + 10px)` }}
+            >
+              {fmtIn(box.wIn)} × {fmtIn(box.hIn)} in
             </div>
           )}
-          {notice && (
-            <p role="alert" className="rounded-lg bg-error/10 px-4 py-2 text-sm text-error">
-              {notice}
-            </p>
-          )}
+        </div>
+      </div>
 
-          {/* Sides */}
-          <div className="flex gap-1.5" role="tablist" aria-label="Product side">
-            {p.views.map((v) => (
-              <button
-                key={v.view}
-                type="button"
-                role="tab"
-                aria-selected={v.view === view}
-                onClick={() => switchView(v.view)}
-                className={`rounded-full px-4 py-1.5 text-sm ${v.view === view ? 'bg-ink text-white' : 'bg-white text-ink hover:bg-white/70'}`}
-              >
-                {VIEW_LABELS[v.view]}
-              </button>
-            ))}
-          </div>
+      {/* Bottom left: zoom, undo, redo */}
+      <div className={`absolute bottom-[148px] left-3 z-30 flex items-center gap-0.5 p-1 sm:bottom-3 ${whitePill}`}>
+        <button type="button" aria-label="Zoom out" onClick={() => setZoom((z) => Math.max(0.6, +(z - 0.15).toFixed(2)))} disabled={zoom <= 0.6} className="hidden h-9 w-9 rounded-full text-xl hover:bg-[#F3F4F6] disabled:opacity-35 sm:block">
+          −
+        </button>
+        <button type="button" aria-label="Zoom in" onClick={() => setZoom((z) => Math.min(2, +(z + 0.15).toFixed(2)))} disabled={zoom >= 2} className="hidden h-9 w-9 rounded-full text-xl hover:bg-[#F3F4F6] disabled:opacity-35 sm:block">
+          +
+        </button>
+        <span className="mx-1 hidden h-5 w-px bg-border sm:block" />
+        <button type="button" aria-label="Undo" onClick={() => step(-1)} disabled={!hist.undo} className="h-9 w-9 rounded-full text-lg hover:bg-[#F3F4F6] disabled:opacity-35">
+          ↶
+        </button>
+        <button type="button" aria-label="Redo" onClick={() => step(1)} disabled={!hist.redo} className="h-9 w-9 rounded-full text-lg hover:bg-[#F3F4F6] disabled:opacity-35">
+          ↷
+        </button>
+      </div>
 
-          {/* The product with the design on it */}
-          <div className="relative max-w-full" style={{ aspectRatio: String(ar), width: `min(100%, ${70 * ar}vh)` }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={mockupSrc} alt={`${p.title}, ${colour.name}, ${VIEW_LABELS[view]}`} className="absolute inset-0 h-full w-full select-none object-contain" draggable={false} />
-            {areas.map((a) => (
-              <div
-                key={a.key}
-                aria-hidden
-                className={`pointer-events-none absolute rounded-sm border-2 border-dashed ${a.key === activeArea ? 'border-sky bg-sky/5' : 'border-[#9CA3AF]'}`}
-                style={{ left: `${a.x}%`, top: `${a.y}%`, width: `${a.width}%`, height: `${a.height}%` }}
-              >
-                <span className={`absolute -top-5 left-0 whitespace-nowrap text-[11px] ${a.key === activeArea ? 'text-sky' : 'text-[#6B7280]'}`}>{a.name}</span>
-              </div>
-            ))}
-            {/* Fabric moves the canvas into its own container, so React gets a wrapper it never changes inside */}
-            <div className="absolute inset-0">
-              <canvas ref={canvasEl} />
-            </div>
-          </div>
-          {!areas.length && <p className="text-sm text-muted-foreground">No print areas are set up for this side yet.</p>}
-        </main>
+      {/* Bottom centre: sides */}
+      <div className={`absolute bottom-[148px] left-1/2 z-30 flex -translate-x-1/2 gap-1 p-1 sm:bottom-3 ${whitePill}`} role="tablist" aria-label="Product side">
+        {p.views.map((v) => (
+          <button
+            key={v.view}
+            type="button"
+            role="tab"
+            aria-selected={v.view === view}
+            aria-label={`${VIEW_LABELS[v.view]}, ${printedIn(v.view) ? 'has a design' : 'no print yet'}`}
+            onClick={() => switchView(v.view)}
+            className={`rounded-full px-4 py-1.5 text-left ${v.view === view ? 'bg-ink text-white' : 'hover:bg-[#F3F4F6]'}`}
+          >
+            <span className="block text-[15px] leading-tight">{VIEW_LABELS[v.view]}</span>
+            <span className={`block text-[11px] leading-tight ${v.view === view ? 'text-white/60' : 'text-muted-foreground'}`}>{printedIn(v.view) ? 'printed' : 'no print yet'}</span>
+          </button>
+        ))}
+      </div>
 
-        {/* Side panel */}
-        <aside className="space-y-6 border-t border-border bg-white p-5 lg:overflow-y-auto lg:border-l lg:border-t-0">
-          <section>
-            <h2 className="font-heading text-lg">Colour: {colour.name}</h2>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {p.colours.map((c, i) => (
-                <button
-                  key={c.name}
-                  type="button"
-                  onClick={() => setColourIdx(i)}
-                  aria-label={c.name}
-                  title={c.name}
-                  className={`h-9 w-9 rounded-full border ${i === colourIdx ? 'ring-2 ring-sky ring-offset-2' : 'border-border'}`}
-                  style={{ background: c.hex }}
-                />
-              ))}
-            </div>
-          </section>
+      {/* Bottom right: order */}
+      <div className="absolute inset-x-3 bottom-3 z-30 rounded-2xl bg-white p-4 shadow-[0_6px_28px_rgba(0,0,0,.18)] sm:inset-x-auto sm:right-3 sm:w-[310px]">
+        <div className="flex items-center justify-between">
+          <h2 className="font-heading text-lg">Order</h2>
+          <button type="button" onClick={() => setOrderOpen((o) => !o)} aria-expanded={orderOpen} aria-label="Show or hide order details" className="flex items-center gap-2 text-[15px]">
+            <span className="font-heading text-lg sm:hidden">{!orderOpen && rupees(total)}</span>
+            <span aria-hidden className={`text-sm transition-transform ${orderOpen ? '' : 'rotate-180'}`}>▾</span>
+          </button>
+        </div>
 
-          <section>
-            <h2 className="font-heading text-lg">Where it goes</h2>
-            <p className="mt-1 text-sm text-body">New text and images are placed in the highlighted area.</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {areas.map((a) => (
-                <button
-                  key={a.key}
-                  type="button"
-                  onClick={() => setActiveArea(a.key)}
-                  className={`rounded-full border px-3.5 py-1.5 text-sm ${a.key === activeArea ? 'border-sky bg-sky/10 text-sky' : 'border-border hover:bg-[#F3F4F6]'}`}
-                >
-                  {a.name}
-                </button>
-              ))}
-            </div>
-            {areas.find((a) => a.key === activeArea)?.sizeNote && (
-              <p className="mt-2 text-sm text-muted-foreground">{areas.find((a) => a.key === activeArea)?.sizeNote}</p>
-            )}
-          </section>
-
-          <section>
-            <h2 className="font-heading text-lg">Print method</h2>
-            {p.methods.length === 0 ? (
-              <p className="mt-2 text-sm text-body">Print methods have not been set up yet, so extras are not added.</p>
-            ) : usedAreas.length === 0 ? (
-              <p className="mt-2 text-sm text-body">Add text or an image and choose how each area is printed.</p>
-            ) : (
-              <ul className="mt-3 space-y-3">
-                {usedAreas.map((a) => {
-                  const m = p.methods.find((x) => x.id === methodFor(a.key))
-                  return (
-                    <li key={a.key} className="rounded-xl border border-border p-3 text-sm">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <span className="font-heading text-[15px]">{a.name}</span>
-                        <span className="text-muted-foreground">{rupees(m ? m[a.size] : 0)} per piece</span>
-                      </div>
-                      <select
-                        value={methodFor(a.key) ?? ''}
-                        onChange={(e) => setMethodByArea((cur) => ({ ...cur, [a.key]: Number(e.target.value) }))}
-                        className="mt-2 w-full rounded-lg border border-border px-2.5 py-2"
-                        aria-label={`Print method for ${a.name}`}
-                      >
-                        {p.methods.map((x) => (
-                          <option key={x.id} value={x.id}>
-                            {x.title}
-                          </option>
-                        ))}
-                      </select>
-                      {m?.description && <p className="mt-1.5 text-muted-foreground">{m.description}</p>}
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-          </section>
-
-          <section className="rounded-xl bg-[#F3F4F6] p-4">
-            <h2 className="font-heading text-lg">Price</h2>
-            <label className="mt-3 flex items-center justify-between gap-3 text-sm">
+        {orderOpen && (
+          <>
+            <label className="mt-3 flex items-center justify-between gap-3 text-[15px]">
               Quantity
               <input
                 type="number"
@@ -751,53 +991,67 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
               />
             </label>
             {p.minQty > 1 && <p className="mt-1 text-right text-xs text-muted-foreground">Minimum {p.minQty} pieces</p>}
-            <dl className="mt-3 space-y-1.5 text-sm">
+            <dl className="mt-3 space-y-1.5 text-[15px]">
               <div className="flex justify-between text-body">
                 <dt>Product</dt>
                 <dd>{rupees(base)}</dd>
               </div>
               <div className="flex justify-between text-body">
-                <dt>Printing ({usedAreas.length} {usedAreas.length === 1 ? 'area' : 'areas'})</dt>
+                <dt>
+                  Printing ({usedAreas.length} {usedAreas.length === 1 ? 'area' : 'areas'})
+                </dt>
                 <dd>{rupees(extras)}</dd>
               </div>
+              {usedAreas.map((a) => (
+                <div key={a.key} className="flex justify-between pl-3 text-sm text-muted-foreground">
+                  <dt>
+                    {a.name}
+                    {methodNameFor(a.key) ? `, ${methodNameFor(a.key)}` : ''}
+                  </dt>
+                  <dd>{rupees(extraFor(a))}</dd>
+                </div>
+              ))}
               <div className="flex justify-between border-t border-border pt-2 text-body">
                 <dt>Per piece</dt>
                 <dd>{rupees(perPiece)}</dd>
               </div>
               <div className="font-heading flex justify-between text-lg text-ink">
-                <dt>Total ({qty} pieces)</dt>
+                <dt>Total ({qty})</dt>
                 <dd>{rupees(total)}</dd>
               </div>
             </dl>
-            <p className="mt-2 text-xs text-muted-foreground">GST included. Delivery is added at checkout.</p>
-            <button
-              type="button"
-              onClick={save}
-              disabled={!usedKeys.length || !!saving || (!!savedToken && !dirty)}
-              className="mt-4 w-full rounded-full bg-sky py-3 text-[16px] font-medium text-white hover:bg-sky/90 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {saving || (savedToken && !dirty ? 'Design saved' : 'Save design')}
-            </button>
+            <p className="mt-1 text-xs text-muted-foreground">GST included. Delivery is added at checkout.</p>
+          </>
+        )}
+
+        {oversize.length > 0 && (
+          <p role="alert" className="mt-3 rounded-lg bg-error/10 px-3 py-2 text-sm text-error">
+            {oversize[0].name} is too large for {methodNameFor(oversize[0].key) || 'this method'}. Make it smaller or choose another method.
+          </p>
+        )}
+
+        <button
+          type="button"
+          onClick={save}
+          disabled={!usedKeys.length || !!saving || (!!savedToken && !dirty) || oversize.length > 0}
+          className="mt-3 w-full rounded-full bg-sky py-3 text-[16px] font-medium text-white hover:bg-sky/90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {saving || (savedToken && !dirty ? 'Design saved' : 'Save design')}
+        </button>
+        {orderOpen && (
+          <>
             {!usedKeys.length && <p className="mt-2 text-center text-xs text-muted-foreground">Add text or an image to save your design.</p>}
-            {savedToken && !dirty && (
-              <div className="mt-3 space-y-2 rounded-lg bg-white p-3 text-sm">
-                {saveInfo && (
-                  <p className="text-body">
-                    Confirmed price: <strong>{rupees(saveInfo.perPiece)}</strong> per piece, <strong>{rupees(saveInfo.total)}</strong> for {qty} pieces.
-                  </p>
-                )}
-                <p className="text-muted-foreground">Use this link to come back to your design any time.</p>
-                <button type="button" onClick={copyLink} className={btn}>
-                  {copied ? 'Link copied' : 'Copy link'}
-                </button>
-              </div>
+            {savedToken && !dirty && saveInfo && (
+              <p className="mt-2 text-center text-sm text-body">
+                Confirmed: <strong>{rupees(saveInfo.perPiece)}</strong> per piece, <strong>{rupees(saveInfo.total)}</strong> total.
+              </p>
             )}
-            <button type="button" disabled className="mt-3 w-full cursor-not-allowed rounded-full bg-ink/20 py-3 text-[16px] font-medium text-white">
+            <button type="button" disabled className="mt-2 w-full cursor-not-allowed rounded-full bg-ink/20 py-3 text-[16px] font-medium text-white">
               Continue to checkout
             </button>
-            <p className="mt-2 text-center text-xs text-muted-foreground">Checkout for designs is added in the next step.</p>
-          </section>
-        </aside>
+            <p className="mt-1.5 text-center text-xs text-muted-foreground">Checkout for designs is added in the next step.</p>
+          </>
+        )}
       </div>
     </div>
   )

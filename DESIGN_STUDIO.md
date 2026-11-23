@@ -18,6 +18,10 @@ Decided by the owner (2026-11-21): build a full design studio (not a workaround 
 - **Products, Design studio tab**: switch the studio on, choose which sides exist, draw the print areas (position and size, plus small/medium/large), and upload the cut-out photo for each colour and side.
 - **Orders**: see each design (preview picture per side, original files, print method, areas) and download the print-ready files.
 
+## Look and units (decided 2026-11-23)
+- The studio screen follows the Monday Merch look: full-screen dotted canvas, a floating dark toolbar, side tabs along the bottom, an Order card at the bottom right.
+- Sizes are shown in **inches**. Each print area has a real width and height in inches (set in the admin), and each print method can have a maximum print size in inches. A design larger than its method allows cannot be saved.
+
 ## Pricing rule
 Price per piece = product price (with quantity tiers) + the sum of the extras for every print area used.
 Extra for one area = the chosen method's price for that area's size (small, medium or large).
