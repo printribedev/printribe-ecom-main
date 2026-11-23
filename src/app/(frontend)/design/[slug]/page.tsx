@@ -5,13 +5,16 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 import React from 'react'
 
-import { DesignStudio } from '@/components/Studio/DesignStudio'
+import { DesignStudio, type SavedDesign } from '@/components/Studio/DesignStudio'
 import type { StudioArea, StudioProduct, StudioViewKey } from '@/lib/studio/types'
 import type { Media } from '@/payload-types'
 
 export const dynamic = 'force-dynamic'
 
-type Args = { params: Promise<{ slug: string }> }
+type Args = {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}
 
 const obj = <T,>(v: unknown): T | null => (v && typeof v === 'object' ? (v as T) : null)
 
@@ -20,8 +23,10 @@ export async function generateMetadata({ params }: Args): Promise<Metadata> {
   return { title: `Design studio | ${slug.replace(/-/g, ' ')} | Printribe`, robots: { index: false } }
 }
 
-export default async function DesignPage({ params }: Args) {
+export default async function DesignPage({ params, searchParams }: Args) {
   const { slug } = await params
+  const sp = await searchParams
+  const token = (Array.isArray(sp.d) ? sp.d[0] : sp.d) || ''
   const payload = await getPayload({ config: configPromise })
 
   const res = await payload.find({
@@ -91,5 +96,27 @@ export default async function DesignPage({ params }: Args) {
   }
   if (data.colours.length === 0) data.colours = [{ name: 'Default', hex: '#FFFFFF', mockups: {} }]
 
-  return <DesignStudio p={data} />
+  // Reopen a saved design when the link carries its secret token
+  let initial: SavedDesign | null = null
+  if (token) {
+    const r = await payload.find({
+      collection: 'designs',
+      where: { token: { equals: token }, product: { equals: product.id }, status: { equals: 'saved' } },
+      limit: 1,
+      overrideAccess: true,
+    })
+    const d = r.docs[0]
+    if (d) {
+      const views = (d.views || {}) as Record<string, unknown>
+      initial = {
+        token,
+        colour: d.colour || '',
+        qty: d.quantity || data.minQty,
+        views: Object.fromEntries(Object.entries(views).map(([k, v]) => [k, JSON.stringify(v)])),
+        methodByArea: (d.methodByArea || {}) as Record<string, number>,
+      }
+    }
+  }
+
+  return <DesignStudio p={data} initial={initial} />
 }

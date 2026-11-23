@@ -74,6 +74,7 @@ export interface Config {
     'product-categories': ProductCategory;
     products: Product;
     'print-methods': PrintMethod;
+    designs: Design;
     orders: Order;
     subscribers: Subscriber;
     users: User;
@@ -101,6 +102,7 @@ export interface Config {
     'product-categories': ProductCategoriesSelect<false> | ProductCategoriesSelect<true>;
     products: ProductsSelect<false> | ProductsSelect<true>;
     'print-methods': PrintMethodsSelect<false> | PrintMethodsSelect<true>;
+    designs: DesignsSelect<false> | DesignsSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
@@ -1276,6 +1278,86 @@ export interface PrintMethod {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "designs".
+ */
+export interface Design {
+  id: number;
+  token: string;
+  status: 'saved' | 'ordered';
+  product?: (number | null) | Product;
+  productTitle: string;
+  colour?: string | null;
+  quantity?: number | null;
+  /**
+   * Product price per piece
+   */
+  baseUnit?: number | null;
+  /**
+   * Printing extras per piece
+   */
+  extrasPerPiece?: number | null;
+  perPiece?: number | null;
+  total?: number | null;
+  /**
+   * Every print area that has a design on it, with the print method chosen.
+   */
+  areasUsed?:
+    | {
+        view?: string | null;
+        areaKey?: string | null;
+        areaName?: string | null;
+        size?: string | null;
+        method?: (number | null) | PrintMethod;
+        methodTitle?: string | null;
+        extra?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Preview picture of the design on the product, one per side.
+   */
+  previews?:
+    | {
+        view?: string | null;
+        url?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Original files the customer uploaded. Use these to prepare the print.
+   */
+  files?:
+    | {
+        url?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * The design itself, one entry per side (used to reopen it in the studio).
+   */
+  views?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  methodByArea?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "orders".
  */
 export interface Order {
@@ -1555,6 +1637,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'print-methods';
         value: number | PrintMethod;
+      } | null)
+    | ({
+        relationTo: 'designs';
+        value: number | Design;
       } | null)
     | ({
         relationTo: 'orders';
@@ -2231,6 +2317,51 @@ export interface PrintMethodsSelect<T extends boolean = true> {
   mediumPrice?: T;
   largePrice?: T;
   order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "designs_select".
+ */
+export interface DesignsSelect<T extends boolean = true> {
+  token?: T;
+  status?: T;
+  product?: T;
+  productTitle?: T;
+  colour?: T;
+  quantity?: T;
+  baseUnit?: T;
+  extrasPerPiece?: T;
+  perPiece?: T;
+  total?: T;
+  areasUsed?:
+    | T
+    | {
+        view?: T;
+        areaKey?: T;
+        areaName?: T;
+        size?: T;
+        method?: T;
+        methodTitle?: T;
+        extra?: T;
+        id?: T;
+      };
+  previews?:
+    | T
+    | {
+        view?: T;
+        url?: T;
+        id?: T;
+      };
+  files?:
+    | T
+    | {
+        url?: T;
+        id?: T;
+      };
+  views?: T;
+  methodByArea?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -38,23 +38,61 @@ async function prepareImage(file: File): Promise<string> {
   return URL.createObjectURL(blob)
 }
 
-export const DesignStudio: React.FC<{ p: StudioProduct }> = ({ p }) => {
-  const [colourIdx, setColourIdx] = useState(0)
+export type SavedDesign = {
+  token: string
+  colour: string
+  qty: number
+  views: Record<string, string>
+  methodByArea: Record<string, number>
+}
+
+/** Words used to spot SVG files that carry code. We refuse those. */
+const UNSAFE_SVG = /<script|javascript:|\son\w+\s*=|<foreignObject/i
+
+/** Saved images come from R2, so ask for them with permission to be drawn into a preview picture. */
+const withCors = (json: string) => {
+  try {
+    const o = JSON.parse(json)
+    for (const x of o.objects || []) if (String(x.type).toLowerCase() === 'image') x.crossOrigin = 'anonymous'
+    return JSON.stringify(o)
+  } catch {
+    return json
+  }
+}
+
+const loadImg = (src: string, cors: boolean) =>
+  new Promise<HTMLImageElement>((res, rej) => {
+    const im = new Image()
+    if (cors) im.crossOrigin = 'anonymous'
+    im.onload = () => res(im)
+    im.onerror = () => rej(new Error('image'))
+    im.src = src
+  })
+
+export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | null }> = ({ p, initial }) => {
+  const [colourIdx, setColourIdx] = useState(Math.max(0, p.colours.findIndex((c) => c.name === initial?.colour)))
   const [view, setView] = useState<StudioViewKey>(p.views[0].view)
   const [activeArea, setActiveArea] = useState<string>(p.views[0].areas[0]?.key || '')
-  const [methodByArea, setMethodByArea] = useState<Record<string, number>>({})
+  const [methodByArea, setMethodByArea] = useState<Record<string, number>>(initial?.methodByArea ?? {})
   const [usedKeys, setUsedKeys] = useState<string[]>([])
   const [sel, setSel] = useState<Sel>(null)
-  const [qty, setQty] = useState(Math.max(1, p.minQty))
+  const [qty, setQty] = useState(Math.max(1, initial?.qty ?? p.minQty))
   const [ar, setAr] = useState(0.8)
   const [ready, setReady] = useState(false)
   const [hist, setHistState] = useState({ undo: false, redo: false })
   const [notice, setNotice] = useState('')
+  const [saving, setSaving] = useState('')
+  const [savedToken, setSavedToken] = useState<string | null>(initial?.token ?? null)
+  const [saveInfo, setSaveInfo] = useState<{ perPiece: number; total: number } | null>(null)
+  const [dirty, setDirty] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   const canvasEl = useRef<HTMLCanvasElement>(null)
   const canvasRef = useRef<Canvas | null>(null)
   const fabricRef = useRef<Fabric | null>(null)
-  const designsRef = useRef<Record<string, string>>({})
+  const designsRef = useRef<Record<string, string>>({ ...(initial?.views ?? {}) })
+  const blobMap = useRef<Record<string, string>>({})
+  const armedRef = useRef(false)
   const histRef = useRef<{ stack: string[]; idx: number }>({ stack: [], idx: 0 })
   const loadingRef = useRef(false)
 
@@ -133,6 +171,7 @@ export const DesignStudio: React.FC<{ p: StudioProduct }> = ({ p }) => {
     if (h.stack.length > 30) h.stack.shift()
     h.idx = h.stack.length - 1
     designsRef.current[viewRef.current] = json
+    if (armedRef.current) setDirty(true)
     setHist()
     refreshUsed()
   }, [refreshUsed, setHist])
@@ -142,7 +181,7 @@ export const DesignStudio: React.FC<{ p: StudioProduct }> = ({ p }) => {
     if (!c) return
     loadingRef.current = true
     try {
-      if (json) await c.loadFromJSON(json)
+      if (json) await c.loadFromJSON(withCors(json))
       else c.clear()
       c.discardActiveObject()
       c.requestRenderAll()
@@ -193,7 +232,9 @@ export const DesignStudio: React.FC<{ p: StudioProduct }> = ({ p }) => {
       cv.on('selection:created', syncSel)
       cv.on('selection:updated', syncSel)
       cv.on('selection:cleared', () => setSel(null))
-      commit()
+      if (!designsRef.current[viewRef.current]) commit()
+      refreshUsed()
+      armedRef.current = true
       setReady(true)
     })()
     return () => {
@@ -284,6 +325,9 @@ export const DesignStudio: React.FC<{ p: StudioProduct }> = ({ p }) => {
     if (!/^image\/(png|jpeg|webp|svg\+xml)$/.test(file.type)) return setNotice('Please use a PNG, JPG, WebP or SVG image.')
     if (file.size > MAX_FILE_MB * 1024 * 1024) return setNotice(`This file is over ${MAX_FILE_MB} MB. Please choose a smaller one.`)
     try {
+      if (file.type === 'image/svg+xml' && UNSAFE_SVG.test(await file.text())) {
+        return setNotice('This SVG file contains code we cannot accept. Please export a plain SVG.')
+      }
       const url = await prepareImage(file)
       const img = await f.FabricImage.fromURL(url)
       const { ax, ay, aw, ah } = areaRect(a)
@@ -382,6 +426,107 @@ export const DesignStudio: React.FC<{ p: StudioProduct }> = ({ p }) => {
     return () => window.removeEventListener('keydown', onKey)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  /* ---------- saving ---------- */
+
+  useEffect(() => {
+    if (armedRef.current) setDirty(true)
+  }, [qty, methodByArea, colourIdx])
+
+  /** Sends one picture the customer added to R2 and returns its public link. */
+  const uploadBlob = async (src: string): Promise<string> => {
+    if (blobMap.current[src]) return blobMap.current[src]
+    const blob = await (await fetch(src)).blob()
+    const type = blob.type || 'image/png'
+    const r = await fetch('/api/studio/upload-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contentType: type, size: blob.size }),
+    })
+    const d = await r.json()
+    if (!r.ok) throw new Error(d.error || 'Could not upload your image.')
+    let ok = false
+    try {
+      ok = (await fetch(d.uploadUrl, { method: 'PUT', headers: { 'Content-Type': type }, body: blob })).ok
+    } catch {}
+    if (!ok) throw new Error('We could not upload your image. Please check your internet and try again.')
+    blobMap.current[src] = d.publicUrl
+    return d.publicUrl
+  }
+
+  /** Draws one side of the product with the design on top, as a picture. */
+  const renderPreview = async (v: StudioViewKey, json: string): Promise<string> => {
+    const f = fabricRef.current!
+    const src = colour.mockups[v] || placeholderShirt(colour.hex, v)
+    const draw = async (withMockup: boolean) => {
+      const bg = withMockup ? await loadImg(src, true) : null
+      const ratio = bg ? bg.naturalWidth / bg.naturalHeight : ar
+      const W = 800
+      const H = Math.round(W / ratio)
+      const sc = new f.StaticCanvas(document.createElement('canvas'), { width: LW, height: Math.round(LW / ratio) })
+      await sc.loadFromJSON(withCors(json))
+      sc.renderAll()
+      const out = document.createElement('canvas')
+      out.width = W
+      out.height = H
+      const ctx = out.getContext('2d')!
+      if (bg) ctx.drawImage(bg, 0, 0, W, H)
+      ctx.drawImage(sc.toCanvasElement(), 0, 0, W, H)
+      sc.dispose()
+      return out.toDataURL('image/png')
+    }
+    try {
+      return await draw(true)
+    } catch {
+      // The product photo could not be read into a picture; save the design on its own instead.
+      return draw(false)
+    }
+  }
+
+  const save = async () => {
+    if (saving || !canvasRef.current) return
+    setNotice('')
+    setSaving('Saving your design…')
+    try {
+      const views: Record<string, string> = {}
+      const previews: Record<string, string> = {}
+      for (const [v, json] of Object.entries(designsRef.current)) {
+        const parsed = JSON.parse(json)
+        if (!parsed.objects?.length) continue
+        setSaving('Uploading your images…')
+        for (const o of parsed.objects) {
+          if (String(o.type).toLowerCase() === 'image' && typeof o.src === 'string' && o.src.startsWith('blob:')) o.src = await uploadBlob(o.src)
+        }
+        views[v] = JSON.stringify(parsed)
+        setSaving('Making your preview…')
+        previews[v] = await renderPreview(v as StudioViewKey, json)
+      }
+      setSaving('Saving your design…')
+      const res = await fetch('/api/studio/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: p.slug, token: savedToken, colour: colour.name, qty, views, previews, methodByArea }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || 'Could not save your design. Please try again.')
+      setSavedToken(d.token)
+      setSaveInfo({ perPiece: d.perPiece, total: d.total })
+      setDirty(false)
+      window.history.replaceState(null, '', `?d=${d.token}`)
+    } catch (e) {
+      setNotice(e instanceof Error && e.message ? e.message : 'Could not save your design. Please try again.')
+    } finally {
+      setSaving('')
+    }
+  }
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/design/${p.slug}?d=${savedToken}`)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {}
+  }
 
   /* ---------- price ---------- */
 
@@ -625,10 +770,32 @@ export const DesignStudio: React.FC<{ p: StudioProduct }> = ({ p }) => {
               </div>
             </dl>
             <p className="mt-2 text-xs text-muted-foreground">GST included. Delivery is added at checkout.</p>
-            <button type="button" disabled className="mt-4 w-full cursor-not-allowed rounded-full bg-sky/50 py-3 text-[16px] font-medium text-white">
+            <button
+              type="button"
+              onClick={save}
+              disabled={!usedKeys.length || !!saving || (!!savedToken && !dirty)}
+              className="mt-4 w-full rounded-full bg-sky py-3 text-[16px] font-medium text-white hover:bg-sky/90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {saving || (savedToken && !dirty ? 'Design saved' : 'Save design')}
+            </button>
+            {!usedKeys.length && <p className="mt-2 text-center text-xs text-muted-foreground">Add text or an image to save your design.</p>}
+            {savedToken && !dirty && (
+              <div className="mt-3 space-y-2 rounded-lg bg-white p-3 text-sm">
+                {saveInfo && (
+                  <p className="text-body">
+                    Confirmed price: <strong>{rupees(saveInfo.perPiece)}</strong> per piece, <strong>{rupees(saveInfo.total)}</strong> for {qty} pieces.
+                  </p>
+                )}
+                <p className="text-muted-foreground">Use this link to come back to your design any time.</p>
+                <button type="button" onClick={copyLink} className={btn}>
+                  {copied ? 'Link copied' : 'Copy link'}
+                </button>
+              </div>
+            )}
+            <button type="button" disabled className="mt-3 w-full cursor-not-allowed rounded-full bg-ink/20 py-3 text-[16px] font-medium text-white">
               Continue to checkout
             </button>
-            <p className="mt-2 text-center text-xs text-muted-foreground">Saving your design and checkout come in the next step.</p>
+            <p className="mt-2 text-center text-xs text-muted-foreground">Checkout for designs is added in the next step.</p>
           </section>
         </aside>
       </div>
