@@ -12,7 +12,6 @@ const COMING_SOON: Record<string, string> = {
   home: 'Printribe', // shown only if the homepage hasn't been created yet
   'bulk-orders': 'Bulk orders',
   quote: 'Get a quote',
-  'design-studio': 'Design Studio',
   about: 'About Printribe',
   contact: 'Contact us',
 }

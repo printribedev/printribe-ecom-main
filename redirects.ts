@@ -14,5 +14,8 @@ export const redirects: NextConfig['redirects'] = async () => {
     source: '/:path((?!ie-incompatible.html$).*)', // all pages except the incompatibility page
   }
 
-  return [internetExplorerRedirect]
+  // The menu, footer and buttons link to /design-studio; the real hub page lives at /design
+  const designStudioRedirect = { source: '/design-studio', destination: '/design', permanent: false }
+
+  return [internetExplorerRedirect, designStudioRedirect]
 }
