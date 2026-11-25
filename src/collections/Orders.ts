@@ -47,12 +47,55 @@ export const Orders: CollectionConfig = {
       admin: { readOnly: true, position: 'sidebar', description: 'The account this belongs to, if the customer was signed in.' },
     },
     {
+      name: 'design',
+      type: 'relationship',
+      relationTo: 'designs',
+      admin: { readOnly: true, position: 'sidebar', description: 'The studio design this order was made from, if any.' },
+    },
+    {
       name: 'publicToken',
       type: 'text',
       required: true,
       index: true,
       access: { read: () => false },
       admin: { hidden: true },
+    },
+    {
+      name: 'designSnapshot',
+      type: 'group',
+      label: 'Studio design (frozen copy made when the order was placed)',
+      admin: { description: 'What to print. Later changes the customer makes to their saved design do not change this.' },
+      fields: [
+        { name: 'printingPerPiece', type: 'number', admin: { readOnly: true, description: 'Printing extras per piece, already included in the unit price' } },
+        {
+          name: 'previews',
+          type: 'array',
+          admin: { readOnly: true, description: 'Picture of the design on the product, one per side.' },
+          fields: [
+            { name: 'view', type: 'text' },
+            { name: 'url', type: 'text' },
+          ],
+        },
+        {
+          name: 'areasUsed',
+          type: 'array',
+          admin: { readOnly: true, description: 'Print areas used and the print method for each.' },
+          fields: [
+            { name: 'view', type: 'text' },
+            { name: 'areaName', type: 'text' },
+            { name: 'size', type: 'text' },
+            { name: 'methodTitle', type: 'text' },
+            { name: 'extra', type: 'number' },
+          ],
+        },
+        {
+          name: 'files',
+          type: 'array',
+          admin: { readOnly: true, description: 'Original files the customer uploaded.' },
+          fields: [{ name: 'url', type: 'text' }],
+        },
+        { name: 'views', type: 'json', admin: { readOnly: true } },
+      ],
     },
     {
       type: 'collapsible',

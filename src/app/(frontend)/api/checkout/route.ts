@@ -5,6 +5,7 @@ import { getPayload } from 'payload'
 
 import { getCustomerFromRequest } from '@/lib/account/session'
 import { quoteOrder } from '@/lib/shop/order'
+import { quoteDesign, type DesignQuote } from '@/lib/studio/order'
 import { normalizePhone, validateDetails, type DetailsInput } from '@/lib/shop/validation'
 import { checkEmailDomain, checkPincode } from '@/lib/shop/verify'
 
@@ -19,6 +20,7 @@ const makeOrderNumber = () => {
 export async function POST(req: Request) {
   let body: {
     slug?: string
+    design?: string
     colour?: string
     sizes?: Record<string, number>
     qty?: number
@@ -31,10 +33,14 @@ export async function POST(req: Request) {
   }
 
   const d = body.details
-  if (!body.slug || !d) return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 400 })
+  if ((!body.slug && !body.design) || !d) return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 400 })
 
-  const quote = await quoteOrder({ slug: body.slug, colour: body.colour, sizes: body.sizes, qty: body.qty })
+  // A studio order is priced from the saved design; a normal order from the product page choices
+  const quote = body.design
+    ? await quoteDesign(body.design, body.sizes)
+    : await quoteOrder({ slug: body.slug || '', colour: body.colour, sizes: body.sizes, qty: body.qty })
   if (!quote.ok) return NextResponse.json({ error: quote.error }, { status: 400 })
+  const dq = body.design ? (quote as Extract<DesignQuote, { ok: true }>) : null
 
   // 1. Dummy-entry rules
   const errors = validateDetails(d)
@@ -76,6 +82,18 @@ export async function POST(req: Request) {
       subtotal: quote.subtotal,
       deliveryFee: quote.deliveryFee,
       total: quote.total,
+      ...(dq
+        ? {
+            design: dq.design.id,
+            designSnapshot: {
+              printingPerPiece: dq.printing,
+              previews: dq.design.previews,
+              areasUsed: dq.design.areasUsed,
+              files: dq.design.files.map((url) => ({ url })),
+              views: dq.design.views,
+            },
+          }
+        : {}),
       customerName: d.name.trim().replace(/\s+/g, ' '),
       phone: normalizePhone(d.phone),
       email: d.email.trim().toLowerCase(),

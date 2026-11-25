@@ -38,7 +38,7 @@ The server always recalculates the price. The browser is never trusted.
 1. **Admin foundation** (print methods, product studio settings, mockup uploads). DONE.
 2. **Editor** (canvas, upload, text, move/resize, print-area limits, colour and side switching). DONE, at `/design/<product-slug>`. Uses a built-in placeholder shirt until real photos are uploaded. Designs are not saved yet.
 3. **Pricing and saving** (live price, save design and previews to R2, server-side price check).
-4. **Checkout link** (design travels into the order and checkout, payment as today).
+4. **Checkout link** (design travels into the order and checkout, payment as today). DONE: the studio Order card has quantity chips (price per piece and saving, like Monday Merch); sizes are chosen at the start of checkout (Monday Merch also asks for sizes later, not in the studio). The server prices the order from the saved design, and the order keeps a frozen copy of the design.
 5. **Order admin** (view designs, download print files).
 6. **Later**: templates, AI ideas, background removal, vectorising, mobile polish.
 

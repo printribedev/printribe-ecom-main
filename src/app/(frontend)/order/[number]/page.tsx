@@ -75,6 +75,16 @@ export default async function OrderPage({ params, searchParams }: Args) {
             {o.quantity} pieces
             {o.sizes && o.sizes.length > 0 ? ` (${o.sizes.map((x) => `${x.size} × ${x.quantity}`).join(', ')})` : ''}
           </p>
+          {o.designSnapshot?.previews && o.designSnapshot.previews.length > 0 && (
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              {o.designSnapshot.previews.map((pv) =>
+                pv.url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={pv.url} src={pv.url} alt={`Your design, ${pv.view || 'side'}`} className="w-full rounded-lg bg-[#F3F4F6] object-contain" />
+                ) : null,
+              )}
+            </div>
+          )}
           <dl className="mt-4 space-y-2 border-t border-border pt-4 text-[15px]">
             <div className="flex justify-between text-body"><dt>Items</dt><dd>{money(o.subtotal)}</dd></div>
             <div className="flex justify-between text-body"><dt>Delivery</dt><dd>{o.deliveryFee === 0 ? 'Free' : money(o.deliveryFee)}</dd></div>

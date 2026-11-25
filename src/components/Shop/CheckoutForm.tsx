@@ -29,6 +29,8 @@ export type CheckoutSummary = {
   subtotal: number
   deliveryFee: number
   total: number
+  /** Set when the order comes from a design made in the design studio. */
+  design?: { token: string; slug: string; printing: number; previews: string[]; productSizes: string[] }
 }
 
 type Field = keyof DetailsInput
@@ -54,6 +56,10 @@ export const CheckoutForm: React.FC<{ s: CheckoutSummary; prefill?: Partial<Deta
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({})
   const [formError, setFormError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [bySize, setBySize] = useState<Record<string, number>>({})
+  const [sizeError, setSizeError] = useState('')
+  const needSizes = !!s.design && s.design.productSizes.length > 0
+  const sizeSum = Object.values(bySize).reduce((a, b) => a + b, 0)
 
   const set = (f: Field, val: string) => setV((cur) => ({ ...cur, [f]: val }))
   const blur = (f: Field) => {
@@ -75,6 +81,12 @@ export const CheckoutForm: React.FC<{ s: CheckoutSummary; prefill?: Partial<Deta
       if (m) found[f] = m
     })
     setErrors(found)
+    if (needSizes && sizeSum !== s.quantity) {
+      setSizeError(`Choose sizes for all ${s.quantity} pieces. You have chosen ${sizeSum}.`)
+      document.getElementById('size-picker')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return
+    }
+    setSizeError('')
     if (Object.keys(found).length) {
       document.querySelector<HTMLElement>('[data-invalid="true"]')?.focus()
       return
@@ -85,7 +97,11 @@ export const CheckoutForm: React.FC<{ s: CheckoutSummary; prefill?: Partial<Deta
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug: s.slug, colour: s.colour, sizes, qty: s.quantity, details: v }),
+        body: JSON.stringify(
+          s.design
+            ? { design: s.design.token, sizes: bySize, details: v }
+            : { slug: s.slug, colour: s.colour, sizes, qty: s.quantity, details: v },
+        ),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -129,7 +145,42 @@ export const CheckoutForm: React.FC<{ s: CheckoutSummary; prefill?: Partial<Deta
   return (
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-14">
       <form onSubmit={submit} noValidate className="space-y-5">
-        <h2 className="font-heading text-2xl">Your details</h2>
+        {needSizes && s.design && (
+          <section id="size-picker" className="space-y-3">
+            <h2 className="font-heading text-2xl">Choose sizes</h2>
+            <p className="text-[15px] text-body">
+              Your design is for {s.quantity} {s.quantity === 1 ? 'piece' : 'pieces'}. Split them across sizes.{' '}
+              <Link href={`/design/${s.design.slug}?d=${encodeURIComponent(s.design.token)}`} className="text-sky underline underline-offset-2">
+                Change quantity or design
+              </Link>
+            </p>
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
+              {s.design.productSizes.map((sz) => (
+                <label key={sz} className="block text-center">
+                  <span className="text-sm text-body">{sz}</span>
+                  <input
+                    type="number"
+                    min={0}
+                    inputMode="numeric"
+                    value={bySize[sz] ?? ''}
+                    placeholder="0"
+                    onChange={(e) => {
+                      const n = Math.max(0, Math.floor(Number(e.target.value)) || 0)
+                      setBySize((cur) => ({ ...cur, [sz]: n }))
+                      setSizeError('')
+                    }}
+                    className="mt-1 w-full rounded-lg border border-border px-2 py-2.5 text-center text-[16px] outline-none focus:border-ink"
+                  />
+                </label>
+              ))}
+            </div>
+            <p className={`text-[15px] ${sizeError ? 'text-error' : sizeSum === s.quantity ? 'text-body' : 'text-muted-foreground'}`} role={sizeError ? 'alert' : undefined}>
+              {sizeError || `${sizeSum} of ${s.quantity} pieces chosen`}
+            </p>
+          </section>
+        )}
+
+        <h2 className="font-heading pt-2 text-2xl">Your details</h2>
         {signInHref && (
           <p className="text-[15px] text-body">
             Have an account?{' '}
@@ -197,7 +248,10 @@ export const CheckoutForm: React.FC<{ s: CheckoutSummary; prefill?: Partial<Deta
           <div className="min-w-0 text-[15px]">
             <div className="font-heading text-[17px] text-ink">{s.title}</div>
             {s.colour && <div className="text-body">Colour: {s.colour}</div>}
-            {s.sizes.length > 0 && <div className="text-body">{s.sizes.map((x) => `${x.size} × ${x.quantity}`).join(', ')}</div>}
+            {s.design
+              ? sizeSum > 0 && <div className="text-body">{Object.entries(bySize).filter(([, n]) => n > 0).map(([k, n]) => `${k} × ${n}`).join(', ')}</div>
+              : s.sizes.length > 0 && <div className="text-body">{s.sizes.map((x) => `${x.size} × ${x.quantity}`).join(', ')}</div>}
+            {s.design && s.design.printing > 0 && <div className="text-body">Printing included: {rupees(s.design.printing)} per piece</div>}
           </div>
         </div>
         <dl className="mt-5 space-y-2 border-t border-border pt-4 text-[15px]">

@@ -3,6 +3,7 @@ import * as migration_20261121_082208_studio_foundation from './20261121_082208_
 import * as migration_20261121_120228_studio_designs from './20261121_120228_studio_designs';
 import * as migration_20261123_152735_studio_inches from './20261123_152735_studio_inches';
 import * as migration_20261125_140452_customers from './20261125_140452_customers';
+import * as migration_20261125_144105_studio_checkout from './20261125_144105_studio_checkout';
 
 export const migrations = [
   {
@@ -28,6 +29,11 @@ export const migrations = [
   {
     up: migration_20261125_140452_customers.up,
     down: migration_20261125_140452_customers.down,
-    name: '20261125_140452_customers'
+    name: '20261125_140452_customers',
+  },
+  {
+    up: migration_20261125_144105_studio_checkout.up,
+    down: migration_20261125_144105_studio_checkout.down,
+    name: '20261125_144105_studio_checkout'
   },
 ];

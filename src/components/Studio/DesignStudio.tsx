@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Canvas, FabricObject, Textbox } from 'fabric'
 
@@ -75,6 +76,7 @@ const loadImg = (src: string, cors: boolean) =>
   })
 
 export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | null }> = ({ p, initial }) => {
+  const router = useRouter()
   const [colourIdx, setColourIdx] = useState(Math.max(0, p.colours.findIndex((c) => c.name === initial?.colour)))
   const [view, setView] = useState<StudioViewKey>(p.views[0].view)
   const [activeArea, setActiveArea] = useState<string>(p.views[0].areas[0]?.key || '')
@@ -569,9 +571,12 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
     }
   }
 
-  const save = async () => {
-    if (saving || !canvasRef.current) return
-    if (oversize.length) return setNotice(`${oversize[0].name} is too large for this print method. Make it smaller or choose another method.`)
+  const save = async (): Promise<string | null> => {
+    if (saving || !canvasRef.current) return null
+    if (oversize.length) {
+      setNotice(`${oversize[0].name} is too large for this print method. Make it smaller or choose another method.`)
+      return null
+    }
     setNotice('')
     setSaving('Saving your design…')
     try {
@@ -600,11 +605,19 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
       setSaveInfo({ perPiece: d.perPiece, total: d.total })
       setDirty(false)
       window.history.replaceState(null, '', `?d=${d.token}`)
+      return d.token as string
     } catch (e) {
       setNotice(e instanceof Error && e.message ? e.message : 'Could not save your design. Please try again.')
+      return null
     } finally {
       setSaving('')
     }
+  }
+
+  /** Saves the design if needed, then goes to checkout with it. */
+  const goCheckout = async () => {
+    const token = savedToken && !dirty ? savedToken : await save()
+    if (token) router.push(`/checkout?design=${encodeURIComponent(token)}`)
   }
 
   const copyLink = async () => {
@@ -627,6 +640,14 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
   const base = unitPriceFor(p.price, p.tiers, qty)
   const perPiece = base + extras
   const total = perPiece * qty
+  // Quantity choices like Monday Merch: each shows the price per piece and how much you save
+  const qtyOptions = useMemo(() => {
+    const set = new Set<number>([Math.max(1, p.minQty)])
+    for (const t of p.tiers) if (t.minQuantity >= p.minQty) set.add(t.minQuantity)
+    for (const n of [25, 50, 100, 250]) if (n >= p.minQty) set.add(n)
+    return [...set].sort((a, b) => a - b).slice(0, 6)
+  }, [p.minQty, p.tiers])
+  const perPieceAt = (n: number) => unitPriceFor(p.price, p.tiers, n) + extras
   const methodNameFor = (key: string) => p.methods.find((m) => m.id === methodFor(key))?.title || ''
   const extraFor = (a: StudioArea) => {
     const m = p.methods.find((x) => x.id === methodFor(a.key))
@@ -980,16 +1001,40 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
 
         {orderOpen && (
           <>
-            <label className="mt-3 flex items-center justify-between gap-3 text-[15px]">
-              Quantity
-              <input
-                type="number"
-                min={p.minQty}
-                value={qty}
-                onChange={(e) => setQty(Math.max(p.minQty, Math.floor(Number(e.target.value)) || p.minQty))}
-                className="w-24 rounded-lg border border-border bg-white px-2.5 py-2"
-              />
-            </label>
+            <div className="mt-3">
+              <span className="text-[15px] text-body">Quantity</span>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                {qtyOptions.map((n) => {
+                  const base0 = perPieceAt(qtyOptions[0])
+                  const here = perPieceAt(n)
+                  const save = base0 > 0 ? Math.round((1 - here / base0) * 100) : 0
+                  return (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setQty(n)}
+                      aria-pressed={qty === n}
+                      className={`rounded-xl border px-3 py-2 text-left ${qty === n ? 'border-ink bg-[#F3F4F6]' : 'border-border hover:bg-[#F9FAFB]'}`}
+                    >
+                      <span className="block text-[15px] font-medium">{n} {n === 1 ? 'pc' : 'pcs'}</span>
+                      <span className="block text-xs text-muted-foreground">
+                        {rupees(here)}/pc{save > 0 ? <span className="text-sky"> · Save {save}%</span> : null}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+              <label className="mt-2 flex items-center justify-between gap-3 text-sm text-body">
+                Other quantity
+                <input
+                  type="number"
+                  min={p.minQty}
+                  value={qty}
+                  onChange={(e) => setQty(Math.max(p.minQty, Math.floor(Number(e.target.value)) || p.minQty))}
+                  className="w-24 rounded-lg border border-border bg-white px-2.5 py-1.5"
+                />
+              </label>
+            </div>
             {p.minQty > 1 && <p className="mt-1 text-right text-xs text-muted-foreground">Minimum {p.minQty} pieces</p>}
             <dl className="mt-3 space-y-1.5 text-[15px]">
               <div className="flex justify-between text-body">
@@ -1034,9 +1079,17 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
           type="button"
           onClick={save}
           disabled={!usedKeys.length || !!saving || (!!savedToken && !dirty) || oversize.length > 0}
-          className="mt-3 w-full rounded-full bg-sky py-3 text-[16px] font-medium text-white hover:bg-sky/90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-3 w-full rounded-full border border-ink py-2.5 text-[15px] font-medium text-ink hover:bg-[#F3F4F6] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving || (savedToken && !dirty ? 'Design saved' : 'Save design')}
+        </button>
+        <button
+          type="button"
+          onClick={goCheckout}
+          disabled={!usedKeys.length || !!saving || oversize.length > 0}
+          className="mt-2 w-full rounded-full bg-sky py-3 text-[16px] font-medium text-white hover:bg-sky/90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {saving || 'Continue to checkout'}
         </button>
         {orderOpen && (
           <>
@@ -1046,10 +1099,6 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
                 Confirmed: <strong>{rupees(saveInfo.perPiece)}</strong> per piece, <strong>{rupees(saveInfo.total)}</strong> total.
               </p>
             )}
-            <button type="button" disabled className="mt-2 w-full cursor-not-allowed rounded-full bg-ink/20 py-3 text-[16px] font-medium text-white">
-              Continue to checkout
-            </button>
-            <p className="mt-1.5 text-center text-xs text-muted-foreground">Checkout for designs is added in the next step.</p>
           </>
         )}
       </div>

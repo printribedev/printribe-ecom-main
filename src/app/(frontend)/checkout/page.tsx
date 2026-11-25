@@ -5,6 +5,7 @@ import React from 'react'
 import { CheckoutForm } from '@/components/Shop/CheckoutForm'
 import { getCustomer } from '@/lib/account/session'
 import { parseSizes, quoteOrder } from '@/lib/shop/order'
+import { quoteDesign } from '@/lib/studio/order'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = { title: 'Checkout | Printribe', robots: { index: false } }
@@ -16,7 +17,9 @@ export default async function CheckoutPage({ searchParams }: Args) {
   const sp = await searchParams
   const slug = one(sp.product) || ''
   const sizes = parseSizes(one(sp.sizes))
-  const quote = slug && sizes ? await quoteOrder({ slug, colour: one(sp.colour), sizes, qty: Number(one(sp.qty)) }) : null
+  const designToken = one(sp.design) || ''
+  const dq = designToken ? await quoteDesign(designToken) : null
+  const quote = dq ?? (slug && sizes ? await quoteOrder({ slug, colour: one(sp.colour), sizes, qty: Number(one(sp.qty)) }) : null)
 
   if (!quote || !quote.ok) {
     return (
@@ -25,8 +28,8 @@ export default async function CheckoutPage({ searchParams }: Args) {
         <p className="mx-auto mt-3 max-w-md text-lg text-body">
           {quote && !quote.ok ? quote.error : 'Please choose a product first.'}
         </p>
-        <Link href={slug ? `/products/${slug}` : '/shop'} className="mt-8 inline-flex rounded-full bg-ink px-6 py-3 text-[17px] font-medium text-white hover:bg-ink/85">
-          {slug ? 'Back to the product' : 'Browse products'}
+        <Link href={designToken ? '/design' : slug ? `/products/${slug}` : '/shop'} className="mt-8 inline-flex rounded-full bg-ink px-6 py-3 text-[17px] font-medium text-white hover:bg-ink/85">
+          {designToken ? 'Back to the Design Studio' : slug ? 'Back to the product' : 'Browse products'}
         </Link>
       </div>
     )
@@ -34,7 +37,7 @@ export default async function CheckoutPage({ searchParams }: Args) {
 
   const me = await getCustomer()
   const back = new URLSearchParams()
-  for (const k of ['product', 'qty', 'colour', 'sizes']) {
+  for (const k of ['product', 'qty', 'colour', 'sizes', 'design']) {
     const v = one(sp[k])
     if (v) back.set(k, v)
   }
@@ -49,7 +52,7 @@ export default async function CheckoutPage({ searchParams }: Args) {
         s={{
           slug: quote.product.slug,
           title: quote.product.title,
-          image: quote.product.image,
+          image: dq && dq.ok && dq.design.previews[0] ? dq.design.previews[0].url : quote.product.image,
           colour: quote.colour,
           sizes: quote.sizes,
           quantity: quote.quantity,
@@ -57,6 +60,7 @@ export default async function CheckoutPage({ searchParams }: Args) {
           subtotal: quote.subtotal,
           deliveryFee: quote.deliveryFee,
           total: quote.total,
+          design: dq && dq.ok ? { token: dq.design.token, slug: dq.product.slug, printing: dq.printing, previews: dq.design.previews.map((p) => p.url), productSizes: dq.productSizes } : undefined,
         }}
       />
     </div>

@@ -1409,7 +1409,61 @@ export interface Order {
    * The account this belongs to, if the customer was signed in.
    */
   customer?: (number | null) | Customer;
+  /**
+   * The studio design this order was made from, if any.
+   */
+  design?: (number | null) | Design;
   publicToken: string;
+  /**
+   * What to print. Later changes the customer makes to their saved design do not change this.
+   */
+  designSnapshot?: {
+    /**
+     * Printing extras per piece, already included in the unit price
+     */
+    printingPerPiece?: number | null;
+    /**
+     * Picture of the design on the product, one per side.
+     */
+    previews?:
+      | {
+          view?: string | null;
+          url?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Print areas used and the print method for each.
+     */
+    areasUsed?:
+      | {
+          view?: string | null;
+          areaName?: string | null;
+          size?: string | null;
+          methodTitle?: string | null;
+          extra?: number | null;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Original files the customer uploaded.
+     */
+    files?:
+      | {
+          url?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    views?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
   product?: (number | null) | Product;
   productTitle: string;
   colour?: string | null;
@@ -2445,7 +2499,37 @@ export interface OrdersSelect<T extends boolean = true> {
   orderNumber?: T;
   status?: T;
   customer?: T;
+  design?: T;
   publicToken?: T;
+  designSnapshot?:
+    | T
+    | {
+        printingPerPiece?: T;
+        previews?:
+          | T
+          | {
+              view?: T;
+              url?: T;
+              id?: T;
+            };
+        areasUsed?:
+          | T
+          | {
+              view?: T;
+              areaName?: T;
+              size?: T;
+              methodTitle?: T;
+              extra?: T;
+              id?: T;
+            };
+        files?:
+          | T
+          | {
+              url?: T;
+              id?: T;
+            };
+        views?: T;
+      };
   product?: T;
   productTitle?: T;
   colour?: T;
