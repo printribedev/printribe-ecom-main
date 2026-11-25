@@ -13,6 +13,9 @@ interface HeaderClientProps {
 }
 
 /** Announcement strip + sticky header with the menu, the main button and a mobile menu. */
+/** The Design Studio is open, so its menu item never shows a "Soon" tag (even if an old one is saved in the admin). */
+const isStudioLink = (l: { url?: string | null } | null | undefined) => typeof l?.url === 'string' && l.url.startsWith('/design')
+
 export const HeaderClient: React.FC<HeaderClientProps> = ({ data }) => {
   const [open, setOpen] = useState(false)
   const pathname = usePathname()
@@ -62,7 +65,7 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({ data }) => {
             {navItems.map(({ link, soon }, i) => (
               <span key={i} className="flex items-center">
                 <CMSLink {...link} className="hover:text-sky" />
-                {soon && (
+                {soon && !isStudioLink(link) && (
                   <span className="ml-1.5 rounded-full bg-sky-tint px-2 py-0.5 text-[10px] font-semibold text-sky">
                     Soon
                   </span>
@@ -118,7 +121,7 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({ data }) => {
               {navItems.map(({ link, soon }, i) => (
                 <div key={i} className="flex items-center justify-between border-b border-border py-3 last:border-0">
                   <CMSLink {...link} className="text-lg font-medium" />
-                  {soon && (
+                  {soon && !isStudioLink(link) && (
                     <span className="rounded-full bg-sky-tint px-2 py-0.5 text-[10px] font-semibold text-sky">
                       Soon
                     </span>

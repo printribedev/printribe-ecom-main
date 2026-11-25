@@ -60,7 +60,7 @@ async function seed() {
         { ...link('Apparel', '/shop'), soon: false },
         { ...link('Accessories', '/shop#cat-accessories'), soon: false },
         { ...link('Bulk orders', '/bulk-orders'), soon: false },
-        { ...link('Design Studio', '/design-studio'), soon: true },
+        link('Design Studio', '/design'),
         { ...link('Blog', '/posts'), soon: false },
         { ...link('About', '/about'), soon: false },
       ],
@@ -187,10 +187,10 @@ async function seed() {
         },
         {
           blockType: 'studioTeaser',
-          tag: 'Coming soon',
+          tag: 'New',
           heading: 'Design Studio',
-          body: 'Upload your logo, place it on the front, back or sleeves, and see it on the product before you order. Join the list to be first.',
-          buttonLabel: 'Notify me',
+          body: 'Add your logo or text, place it on the front or back, and see it on the product with the price updating as you go.',
+          buttonLabel: 'Start designing',
         },
         {
           blockType: 'methods',

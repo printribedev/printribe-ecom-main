@@ -221,18 +221,26 @@ export const CategoryTilesSection: React.FC<CategoryTilesBlock> = ({
 
 export const StudioTeaserSection: React.FC<StudioTeaserBlock> = ({ tag, heading, body, buttonLabel, image }) => {
   const img = asMedia(image)
+  // The studio is open now. Old "coming soon" / "notify me" wording saved in the admin is ignored.
+  const shownTag = tag && !/soon/i.test(tag) ? tag : null
+  const label = buttonLabel && !/notify/i.test(buttonLabel) ? buttonLabel : 'Start designing'
   return (
     <section className="py-2">
       <div className="mx-5 grid items-center gap-10 rounded-3xl bg-black px-6 py-12 text-white md:px-14 md:py-[72px] lg:mx-auto lg:max-w-[1180px] lg:grid-cols-[1.1fr_1fr]">
         <div>
-          {tag && (
+          {shownTag && (
             <span className="mb-5 inline-block rounded-full bg-sky-bright px-3.5 py-1 text-[13px] font-semibold text-[#00253a]">
-              {tag}
+              {shownTag}
             </span>
           )}
           <h2 className="font-heading text-[clamp(30px,4.4vw,48px)]">{heading}</h2>
           {body && <p className="mb-7 mt-4 text-lg text-white/75">{body}</p>}
-          <SubscribeForm source="design-studio" buttonLabel={buttonLabel} tone="dark" />
+          <Link
+            href="/design"
+            className="inline-flex rounded-full bg-white px-7 py-3.5 text-[17px] font-medium text-ink hover:bg-white/90"
+          >
+            {label}
+          </Link>
         </div>
         <div className="relative grid aspect-square place-items-center overflow-hidden rounded-[20px] bg-[radial-gradient(circle_at_50%_40%,#2c2c2e,#151516)]">
           {img ? (

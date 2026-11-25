@@ -127,10 +127,10 @@ export const StudioTeaser: Block = {
   interfaceName: 'StudioTeaserBlock',
   labels: { singular: 'Design Studio teaser', plural: 'Design Studio teasers' },
   fields: [
-    { name: 'tag', type: 'text', defaultValue: 'Coming soon' },
+    { name: 'tag', type: 'text', defaultValue: 'New' },
     { name: 'heading', type: 'text', required: true, defaultValue: 'Design Studio' },
     { name: 'body', type: 'textarea' },
-    { name: 'buttonLabel', type: 'text', defaultValue: 'Notify me' },
+    { name: 'buttonLabel', type: 'text', defaultValue: 'Start designing' },
     { name: 'image', type: 'upload', relationTo: 'media', admin: { description: 'Optional picture of the studio or a product' } },
   ],
 }
