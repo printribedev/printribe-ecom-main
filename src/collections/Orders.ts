@@ -61,6 +61,14 @@ export const Orders: CollectionConfig = {
       admin: { hidden: true },
     },
     {
+      name: 'designPanel',
+      type: 'ui',
+      admin: {
+        components: { Field: '@/components/Admin/OrderDesignPanel#OrderDesignPanel' },
+        condition: (data) => !!data?.design,
+      },
+    },
+    {
       name: 'designSnapshot',
       type: 'group',
       label: 'Studio design (frozen copy made when the order was placed)',
