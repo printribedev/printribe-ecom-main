@@ -41,6 +41,13 @@ export const Designs: CollectionConfig = {
       ],
       admin: { position: 'sidebar' },
     },
+    {
+      name: 'customer',
+      type: 'relationship',
+      relationTo: 'customers',
+      index: true,
+      admin: { readOnly: true, position: 'sidebar', description: 'The account this belongs to, if the customer was signed in.' },
+    },
     { name: 'product', type: 'relationship', relationTo: 'products', admin: { readOnly: true } },
     { name: 'productTitle', type: 'text', required: true, admin: { readOnly: true } },
     { name: 'colour', type: 'text', admin: { readOnly: true } },

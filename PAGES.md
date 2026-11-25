@@ -35,7 +35,7 @@ Admin screens for Phase A (inside `/admin`): Products, Categories, Orders (statu
 | 19 | FAQ | `/faq` |
 | 20 | Blog list and blog post | `/blog`, `/blog/[slug]` |
 | 21 | Design Studio (coming soon, notify me) | `/design-studio` |
-| 22 | Customer login and My orders | `/account` |
+| 22 | Customer login and My orders | `/account` | Built (own login, separate from the admin). Email service (Resend) still needed for password reset emails on the live site |
 
 ## Phase C: later
 

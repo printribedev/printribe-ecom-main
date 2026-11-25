@@ -3,6 +3,7 @@ import Link from 'next/link'
 import React from 'react'
 
 import { CheckoutForm } from '@/components/Shop/CheckoutForm'
+import { getCustomer } from '@/lib/account/session'
 import { parseSizes, quoteOrder } from '@/lib/shop/order'
 
 export const dynamic = 'force-dynamic'
@@ -31,10 +32,20 @@ export default async function CheckoutPage({ searchParams }: Args) {
     )
   }
 
+  const me = await getCustomer()
+  const back = new URLSearchParams()
+  for (const k of ['product', 'qty', 'colour', 'sizes']) {
+    const v = one(sp[k])
+    if (v) back.set(k, v)
+  }
+  const signInHref = `/account/login?next=${encodeURIComponent(`/checkout?${back.toString()}`)}`
+
   return (
     <div className="container py-10 pb-20">
       <h1 className="font-heading mb-8 text-[clamp(30px,4vw,44px)] leading-tight">Checkout</h1>
       <CheckoutForm
+        prefill={me ? { name: me.name, email: me.email, phone: me.phone || '' } : undefined}
+        signInHref={me ? undefined : signInHref}
         s={{
           slug: quote.product.slug,
           title: quote.product.title,

@@ -75,6 +75,7 @@ export interface Config {
     products: Product;
     'print-methods': PrintMethod;
     designs: Design;
+    customers: Customer;
     orders: Order;
     subscribers: Subscriber;
     users: User;
@@ -103,6 +104,7 @@ export interface Config {
     products: ProductsSelect<false> | ProductsSelect<true>;
     'print-methods': PrintMethodsSelect<false> | PrintMethodsSelect<true>;
     designs: DesignsSelect<false> | DesignsSelect<true>;
+    customers: CustomersSelect<false> | CustomersSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
@@ -1300,6 +1302,10 @@ export interface Design {
   id: number;
   token: string;
   status: 'saved' | 'ordered';
+  /**
+   * The account this belongs to, if the customer was signed in.
+   */
+  customer?: (number | null) | Customer;
   product?: (number | null) | Product;
   productTitle: string;
   colour?: string | null;
@@ -1374,12 +1380,35 @@ export interface Design {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "customers".
+ */
+export interface Customer {
+  id: number;
+  email: string;
+  name: string;
+  phone?: string | null;
+  passwordHash: string;
+  sessionVersion?: number | null;
+  resetTokenHash?: string | null;
+  resetExpires?: string | null;
+  failedLogins?: number | null;
+  lockedUntil?: string | null;
+  lastLoginAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "orders".
  */
 export interface Order {
   id: number;
   orderNumber: string;
   status: 'awaiting-payment' | 'paid' | 'in-production' | 'shipped' | 'delivered' | 'cancelled';
+  /**
+   * The account this belongs to, if the customer was signed in.
+   */
+  customer?: (number | null) | Customer;
   publicToken: string;
   product?: (number | null) | Product;
   productTitle: string;
@@ -1657,6 +1686,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'designs';
         value: number | Design;
+      } | null)
+    | ({
+        relationTo: 'customers';
+        value: number | Customer;
       } | null)
     | ({
         relationTo: 'orders';
@@ -2347,6 +2380,7 @@ export interface PrintMethodsSelect<T extends boolean = true> {
 export interface DesignsSelect<T extends boolean = true> {
   token?: T;
   status?: T;
+  customer?: T;
   product?: T;
   productTitle?: T;
   colour?: T;
@@ -2387,11 +2421,30 @@ export interface DesignsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "customers_select".
+ */
+export interface CustomersSelect<T extends boolean = true> {
+  email?: T;
+  name?: T;
+  phone?: T;
+  passwordHash?: T;
+  sessionVersion?: T;
+  resetTokenHash?: T;
+  resetExpires?: T;
+  failedLogins?: T;
+  lockedUntil?: T;
+  lastLoginAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "orders_select".
  */
 export interface OrdersSelect<T extends boolean = true> {
   orderNumber?: T;
   status?: T;
+  customer?: T;
   publicToken?: T;
   product?: T;
   productTitle?: T;

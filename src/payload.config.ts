@@ -1,4 +1,5 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
+import { resendAdapter } from '@payloadcms/email-resend'
 import { sqliteAdapter } from '@payloadcms/db-sqlite'
 import { s3Storage } from '@payloadcms/storage-s3'
 import sharp from 'sharp'
@@ -13,6 +14,7 @@ import { Posts } from './collections/Posts'
 import { ProductCategories } from './collections/ProductCategories'
 import { PrintMethods } from './collections/PrintMethods'
 import { Products } from './collections/Products'
+import { Customers } from './collections/Customers'
 import { Designs } from './collections/Designs'
 import { Orders } from './collections/Orders'
 import { ShopSettings } from './globals/ShopSettings'
@@ -66,6 +68,14 @@ export default buildConfig({
   },
   // This config helps us configure global or default features that the other editors can inherit
   editor: defaultLexical,
+  // Email: sent through Resend when RESEND_API_KEY is set. Without it, emails are only printed in the server log.
+  email: process.env.RESEND_API_KEY
+    ? resendAdapter({
+        defaultFromAddress: process.env.EMAIL_FROM || 'onboarding@resend.dev',
+        defaultFromName: 'Printribe',
+        apiKey: process.env.RESEND_API_KEY,
+      })
+    : undefined,
   // Database: Supabase Postgres when POSTGRES_URL is set (live site), otherwise a local SQLite file.
   // On Postgres, tables are created by migrations (src/migrations), not by dev auto-push.
   db: process.env.POSTGRES_URL
@@ -77,7 +87,7 @@ export default buildConfig({
     : sqliteAdapter({
         client: { url: process.env.DATABASE_URL || 'file:./printribe-dev.db' },
       }),
-  collections: [Pages, Posts, Media, Categories, ProductCategories, Products, PrintMethods, Designs, Orders, Subscribers, Users],
+  collections: [Pages, Posts, Media, Categories, ProductCategories, Products, PrintMethods, Designs, Customers, Orders, Subscribers, Users],
   cors: [getServerSideURL()].filter(Boolean),
   globals: [Header, Footer, ShopSettings],
   plugins: [

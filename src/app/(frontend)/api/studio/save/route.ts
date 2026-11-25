@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 
+import { getCustomerFromRequest } from '@/lib/account/session'
 import { unitPriceFor } from '@/lib/shop/pricing'
 import { putObject, r2Configured } from '@/lib/studio/r2'
 import { studioExtras, type AreaSize, type MethodPrices } from '@/lib/studio/pricing'
@@ -38,6 +39,7 @@ export async function POST(req: Request) {
   }
 
   const payload = await getPayload({ config: configPromise })
+  const me = await getCustomerFromRequest(req)
   const found = await payload.find({
     collection: 'products',
     where: { slug: { equals: String(body.slug || '') }, published: { equals: true } },
@@ -132,6 +134,7 @@ export async function POST(req: Request) {
     files: design.files.map((url) => ({ url })),
     views: design.views,
     methodByArea: body.methodByArea || {},
+    ...(me ? { customer: me.id } : {}),
   }
   if (existing) await payload.update({ collection: 'designs', id: existing.id, data, overrideAccess: true })
   else await payload.create({ collection: 'designs', data, overrideAccess: true })

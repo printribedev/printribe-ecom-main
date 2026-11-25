@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import React, { useState } from 'react'
 
@@ -47,9 +48,9 @@ const inputCls = (bad: boolean) =>
     bad ? 'border-error' : 'border-border'
   }`
 
-export const CheckoutForm: React.FC<{ s: CheckoutSummary }> = ({ s }) => {
+export const CheckoutForm: React.FC<{ s: CheckoutSummary; prefill?: Partial<DetailsInput>; signInHref?: string }> = ({ s, prefill, signInHref }) => {
   const router = useRouter()
-  const [v, setV] = useState<DetailsInput>({ name: '', phone: '', email: '', line1: '', line2: '', city: '', state: '', pincode: '' })
+  const [v, setV] = useState<DetailsInput>({ name: '', phone: '', email: '', line1: '', line2: '', city: '', state: '', pincode: '', ...prefill })
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({})
   const [formError, setFormError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -129,6 +130,15 @@ export const CheckoutForm: React.FC<{ s: CheckoutSummary }> = ({ s }) => {
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-14">
       <form onSubmit={submit} noValidate className="space-y-5">
         <h2 className="font-heading text-2xl">Your details</h2>
+        {signInHref && (
+          <p className="text-[15px] text-body">
+            Have an account?{' '}
+            <Link href={signInHref} className="text-sky underline underline-offset-2">
+              Sign in
+            </Link>{' '}
+            to find this order in your account later.
+          </p>
+        )}
         {text('name', 'Full name', { auto: 'name' })}
         <div className="grid gap-5 sm:grid-cols-2">
           {text('phone', 'Mobile number', { type: 'tel', auto: 'tel', inputMode: 'tel', hint: 'We call or WhatsApp only about your order.' })}

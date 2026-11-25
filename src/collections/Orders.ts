@@ -40,6 +40,13 @@ export const Orders: CollectionConfig = {
       admin: { position: 'sidebar' },
     },
     {
+      name: 'customer',
+      type: 'relationship',
+      relationTo: 'customers',
+      index: true,
+      admin: { readOnly: true, position: 'sidebar', description: 'The account this belongs to, if the customer was signed in.' },
+    },
+    {
       name: 'publicToken',
       type: 'text',
       required: true,

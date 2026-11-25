@@ -3,6 +3,7 @@ import { randomBytes, randomUUID } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 
+import { getCustomerFromRequest } from '@/lib/account/session'
 import { quoteOrder } from '@/lib/shop/order'
 import { normalizePhone, validateDetails, type DetailsInput } from '@/lib/shop/validation'
 import { checkEmailDomain, checkPincode } from '@/lib/shop/verify'
@@ -49,6 +50,7 @@ export async function POST(req: Request) {
   }
 
   const payload = await getPayload({ config: configPromise })
+  const me = await getCustomerFromRequest(req) // orders placed while signed in go into the account
   const token = randomUUID()
 
   let orderNumber = makeOrderNumber()
@@ -63,6 +65,7 @@ export async function POST(req: Request) {
     data: {
       orderNumber,
       publicToken: token,
+      ...(me ? { customer: me.id } : {}),
       status: 'awaiting-payment',
       product: quote.product.id,
       productTitle: quote.product.title,

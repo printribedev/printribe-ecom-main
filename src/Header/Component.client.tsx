@@ -72,6 +72,16 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({ data }) => {
           </nav>
 
           <div className="flex items-center gap-3">
+            <Link
+              href="/account"
+              aria-label="My account"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-white hover:bg-[#F3F4F6]"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <circle cx="12" cy="8" r="4" />
+                <path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
+              </svg>
+            </Link>
             {cta?.url && (
               <Link
                 href={cta.url}
