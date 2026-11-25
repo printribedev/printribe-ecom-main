@@ -650,7 +650,7 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
   const base = unitPriceFor(p.price, p.tiers, qty)
   const perPiece = base + extras
   const total = perPiece * qty
-  // Quantity choices like Monday Merch: each shows the price per piece and how much you save
+  // Quantity choices: each shows the price per piece and how much you save
   const qtyOptions = useMemo(() => {
     const set = new Set<number>([Math.max(1, p.minQty)])
     for (const t of p.tiers) if (t.minQuantity >= p.minQty) set.add(t.minQuantity)
