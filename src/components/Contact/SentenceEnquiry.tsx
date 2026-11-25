@@ -20,10 +20,44 @@ const MAX_FILES = 3
 const MAX_MB = 15
 const TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml', 'application/pdf']
 
-/** A blank in the sentence: underlined, tinted, and readable on the sky-blue block. */
-const blank =
-  'mx-1 inline-block rounded-t-md border-b-[3px] border-white/80 bg-white/15 px-2.5 py-0.5 align-baseline font-medium text-white outline-none placeholder:text-white/60 hover:bg-white/20 focus:bg-white/25'
+/** The look of a blank: underlined, tinted, and readable on the sky-blue block. */
+const blankCore =
+  'rounded-t-md border-b-[3px] border-white/80 bg-white/15 px-2.5 py-0.5 font-medium text-white outline-none placeholder:text-white/60 hover:bg-white/20 focus:bg-white/25'
 
+/**
+ * A text blank that is exactly as wide as what is typed. A hidden copy of the text sets the width,
+ * and the real input sits on top of it, so it grows and shrinks as the person types.
+ */
+const AutoInput: React.FC<{
+  label: string
+  value: string
+  onChange: (v: string) => void
+  placeholder: string
+  type?: string
+  autoComplete?: string
+  inputMode?: 'tel' | 'text'
+  invalid?: boolean
+}> = ({ label, value, onChange, placeholder, type = 'text', autoComplete, inputMode, invalid }) => (
+  <span className="mx-1 inline-grid max-w-full align-baseline">
+    <span aria-hidden className={`${blankCore} invisible col-start-1 row-start-1 overflow-hidden whitespace-pre`}>
+      {(value || placeholder) + ' '}
+    </span>
+    <input
+      aria-label={label}
+      placeholder={placeholder}
+      type={type}
+      autoComplete={autoComplete}
+      inputMode={inputMode}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      data-bad={invalid ? 'true' : undefined}
+      aria-invalid={!!invalid}
+      className={`${blankCore} col-start-1 row-start-1 w-0 min-w-full ${invalid ? 'border-[#FECACA]' : ''}`}
+    />
+  </span>
+)
+
+/** A dropdown blank that is as wide as the option chosen (a normal dropdown is as wide as its longest option). */
 const Select: React.FC<{
   label: string
   value: string
@@ -31,16 +65,29 @@ const Select: React.FC<{
   options: readonly string[]
   placeholder: string
 }> = ({ label, value, onChange, options, placeholder }) => (
-  <select aria-label={label} value={value} onChange={(e) => onChange(e.target.value)} className={`${blank} cursor-pointer pr-1`}>
-    <option value="" className="text-ink">
-      {placeholder}
-    </option>
-    {options.map((o) => (
-      <option key={o} value={o} className="text-ink">
-        {o}
+  <span className="relative mx-1 inline-grid max-w-full align-baseline">
+    <span aria-hidden className={`${blankCore} invisible col-start-1 row-start-1 overflow-hidden whitespace-pre pr-8`}>
+      {value || placeholder}
+    </span>
+    <select
+      aria-label={label}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={`${blankCore} col-start-1 row-start-1 w-0 min-w-full cursor-pointer appearance-none pr-8`}
+    >
+      <option value="" className="text-ink">
+        {placeholder}
       </option>
-    ))}
-  </select>
+      {options.map((o) => (
+        <option key={o} value={o} className="text-ink">
+          {o}
+        </option>
+      ))}
+    </select>
+    <span aria-hidden className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[0.55em] opacity-80">
+      ▾
+    </span>
+  </span>
 )
 
 export const SentenceEnquiry: React.FC<{
@@ -167,16 +214,7 @@ export const SentenceEnquiry: React.FC<{
       {/* The sentence. Everything but name and phone is a tap. */}
       <p className="font-heading text-[clamp(24px,3.6vw,42px)] leading-[2.05] md:leading-[2.15]">
         Hi, I&apos;m
-        <input
-          aria-label="Your name"
-          placeholder="your name"
-          autoComplete="name"
-          value={v.name}
-          onChange={(e) => set('name')(e.target.value)}
-          data-bad={bad('name')}
-          aria-invalid={!!errors.name}
-          className={`${blank} w-[9.5em] ${errors.name ? 'border-[#FECACA]' : ''}`}
-        />
+        <AutoInput label="Your name" placeholder="your name" autoComplete="name" value={v.name} onChange={set('name')} invalid={!!errors.name} />
         . I&apos;d like
         <Select label="What you would like" value={v.what} onChange={set('what')} options={ENQUIRY_WHAT} placeholder="something" />
         for
@@ -184,17 +222,15 @@ export const SentenceEnquiry: React.FC<{
         <Select label="How many pieces" value={v.quantity} onChange={set('quantity')} options={ENQUIRY_QUANTITIES} placeholder="how many" />
         pieces, needed
         <Select label="When you need it" value={v.neededBy} onChange={set('neededBy')} options={ENQUIRY_WHEN} placeholder="by when" />. Reach me on
-        <input
-          aria-label="Your mobile number"
+        <AutoInput
+          label="Your mobile number"
           placeholder="mobile number"
           type="tel"
           autoComplete="tel"
           inputMode="tel"
           value={v.phone}
-          onChange={(e) => set('phone')(e.target.value)}
-          data-bad={bad('phone')}
-          aria-invalid={!!errors.phone}
-          className={`${blank} w-[9.5em] ${errors.phone ? 'border-[#FECACA]' : ''}`}
+          onChange={set('phone')}
+          invalid={!!errors.phone}
         />
         ,
         <Select label="Best time to contact you" value={v.bestTime} onChange={set('bestTime')} options={ENQUIRY_BEST_TIME} placeholder="anytime" />.
