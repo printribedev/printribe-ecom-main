@@ -13,7 +13,6 @@ const COMING_SOON: Record<string, string> = {
   'bulk-orders': 'Bulk orders',
   quote: 'Get a quote',
   about: 'About Printribe',
-  contact: 'Contact us',
 }
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { RenderHero } from '@/heros/RenderHero'

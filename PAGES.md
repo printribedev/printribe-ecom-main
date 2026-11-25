@@ -16,7 +16,7 @@ Goal of Phase A: the first real order placed, paid and shipped.
 | 7 | Payment with Razorpay (Pay button, signature check, webhook) | `/checkout/payment` | Built. Needs your Razorpay test keys in `.env` to try a real payment |
 | 8 | Order status | `/order/[number]` | Built and tested |
 | 9 | Track my order | `/track` | To do |
-| 10 | Contact | `/contact` | To do |
+| 10 | Contact | `/contact` | Built: fill-in-the-sentence enquiry (saved in Enquiries, optional WhatsApp send), where is my order lookup, Need help button, FAQ. Phone and WhatsApp numbers are set in the admin under Contact details |
 | 11 | Shipping and returns | `/shipping-returns` | To do |
 | 12 | Terms and conditions | `/terms` | Built (text copied from the Framer site) |
 | 13 | Privacy policy | `/privacy` | Built (text copied from the Framer site) |

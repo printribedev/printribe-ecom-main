@@ -76,6 +76,7 @@ export interface Config {
     'print-methods': PrintMethod;
     designs: Design;
     customers: Customer;
+    enquiries: Enquiry;
     orders: Order;
     subscribers: Subscriber;
     users: User;
@@ -105,6 +106,7 @@ export interface Config {
     'print-methods': PrintMethodsSelect<false> | PrintMethodsSelect<true>;
     designs: DesignsSelect<false> | DesignsSelect<true>;
     customers: CustomersSelect<false> | CustomersSelect<true>;
+    enquiries: EnquiriesSelect<false> | EnquiriesSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
@@ -127,11 +129,13 @@ export interface Config {
     header: Header;
     footer: Footer;
     'shop-settings': ShopSetting;
+    'contact-settings': ContactSetting;
   };
   globalsSelect: {
     header: HeaderSelect<false> | HeaderSelect<true>;
     footer: FooterSelect<false> | FooterSelect<true>;
     'shop-settings': ShopSettingsSelect<false> | ShopSettingsSelect<true>;
+    'contact-settings': ContactSettingsSelect<false> | ContactSettingsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -1399,6 +1403,63 @@ export interface Customer {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "enquiries".
+ */
+export interface Enquiry {
+  id: number;
+  status: 'new' | 'in-progress' | 'done';
+  /**
+   * Set if they were signed in.
+   */
+  customer?: (number | null) | Customer;
+  name: string;
+  /**
+   * Optional: some people only leave a phone number.
+   */
+  email?: string | null;
+  phone?: string | null;
+  organisation?: string | null;
+  /**
+   * What they would like
+   */
+  interestedIn?: string | null;
+  /**
+   * Who it is for
+   */
+  need?: string | null;
+  quantity?: string | null;
+  /**
+   * Date they need it by
+   */
+  neededBy?: string | null;
+  /**
+   * Best time to contact them
+   */
+  bestTime?: string | null;
+  /**
+   * form = Send it, whatsapp = they also opened WhatsApp
+   */
+  channel?: string | null;
+  message: string;
+  /**
+   * Logos or designs they uploaded (right-click and "Save as" to download).
+   */
+  files?:
+    | {
+        url?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  heardFrom?: string | null;
+  /**
+   * For your team only.
+   */
+  internalNotes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "orders".
  */
 export interface Order {
@@ -1744,6 +1805,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'customers';
         value: number | Customer;
+      } | null)
+    | ({
+        relationTo: 'enquiries';
+        value: number | Enquiry;
       } | null)
     | ({
         relationTo: 'orders';
@@ -2493,6 +2558,35 @@ export interface CustomersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "enquiries_select".
+ */
+export interface EnquiriesSelect<T extends boolean = true> {
+  status?: T;
+  customer?: T;
+  name?: T;
+  email?: T;
+  phone?: T;
+  organisation?: T;
+  interestedIn?: T;
+  need?: T;
+  quantity?: T;
+  neededBy?: T;
+  bestTime?: T;
+  channel?: T;
+  message?: T;
+  files?:
+    | T
+    | {
+        url?: T;
+        id?: T;
+      };
+  heardFrom?: T;
+  internalNotes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "orders_select".
  */
 export interface OrdersSelect<T extends boolean = true> {
@@ -3002,6 +3096,39 @@ export interface ShopSetting {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contact-settings".
+ */
+export interface ContactSetting {
+  id: number;
+  /**
+   * Shown on the Contact page. New enquiries are also emailed here once email sending is set up.
+   */
+  email?: string | null;
+  /**
+   * WhatsApp number with country code, digits only, for example 919845012345. Leave empty to hide the WhatsApp button.
+   */
+  whatsapp?: string | null;
+  /**
+   * Phone number customers can call, for example +91 98450 12345. Leave empty to hide it.
+   */
+  phone?: string | null;
+  /**
+   * For example "Monday to Saturday, 10 am to 6 pm". Leave empty to hide it.
+   */
+  hours?: string | null;
+  /**
+   * City or full address. Leave empty to hide it.
+   */
+  location?: string | null;
+  /**
+   * Shown as "We reply ___" under the enquiry form. Only promise what your team can keep.
+   */
+  replyTime?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "header_select".
  */
 export interface HeaderSelect<T extends boolean = true> {
@@ -3104,6 +3231,21 @@ export interface FooterSelect<T extends boolean = true> {
 export interface ShopSettingsSelect<T extends boolean = true> {
   deliveryFee?: T;
   freeDeliveryAbove?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contact-settings_select".
+ */
+export interface ContactSettingsSelect<T extends boolean = true> {
+  email?: T;
+  whatsapp?: T;
+  phone?: T;
+  hours?: T;
+  location?: T;
+  replyTime?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

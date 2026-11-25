@@ -78,7 +78,7 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({ data }) => {
             <Link
               href="/account"
               aria-label="My account"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-white hover:bg-[#F3F4F6]"
+              className="hidden h-10 w-10 items-center justify-center rounded-full border border-border bg-white hover:bg-[#F3F4F6] sm:flex"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <circle cx="12" cy="8" r="4" />
@@ -88,7 +88,7 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({ data }) => {
             {cta?.url && (
               <Link
                 href={cta.url}
-                className="rounded-full bg-ink px-5 py-2 text-[15px] font-medium text-white hover:bg-ink/85"
+                className="whitespace-nowrap rounded-full bg-ink px-5 py-2 text-[15px] font-medium text-white hover:bg-ink/85"
               >
                 {cta.label || 'Get a quote'}
               </Link>
@@ -128,6 +128,11 @@ export const HeaderClient: React.FC<HeaderClientProps> = ({ data }) => {
                   )}
                 </div>
               ))}
+              <div className="border-t border-border py-3 sm:hidden">
+                <Link href="/account" className="text-lg font-medium" onClick={() => setOpen(false)}>
+                  My account
+                </Link>
+              </div>
             </div>
           </nav>
         )}

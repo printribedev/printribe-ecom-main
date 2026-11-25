@@ -5,6 +5,7 @@ import { Inter } from 'next/font/google'
 import React from 'react'
 
 import { AdminBar } from '@/components/AdminBar'
+import { HelpButton } from '@/components/Contact/HelpButton'
 import { Footer } from '@/Footer/Component'
 import { Header } from '@/Header/Component'
 import { Providers } from '@/providers'
@@ -43,6 +44,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <Header />
           <main className="flex-1">{children}</main>
           <Footer />
+          <HelpButton />
         </Providers>
       </body>
     </html>

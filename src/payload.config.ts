@@ -15,8 +15,10 @@ import { ProductCategories } from './collections/ProductCategories'
 import { PrintMethods } from './collections/PrintMethods'
 import { Products } from './collections/Products'
 import { Customers } from './collections/Customers'
+import { Enquiries } from './collections/Enquiries'
 import { Designs } from './collections/Designs'
 import { Orders } from './collections/Orders'
+import { ContactSettings } from './globals/ContactSettings'
 import { ShopSettings } from './globals/ShopSettings'
 import { Subscribers } from './collections/Subscribers'
 import { Users } from './collections/Users'
@@ -87,9 +89,9 @@ export default buildConfig({
     : sqliteAdapter({
         client: { url: process.env.DATABASE_URL || 'file:./printribe-dev.db' },
       }),
-  collections: [Pages, Posts, Media, Categories, ProductCategories, Products, PrintMethods, Designs, Customers, Orders, Subscribers, Users],
+  collections: [Pages, Posts, Media, Categories, ProductCategories, Products, PrintMethods, Designs, Customers, Enquiries, Orders, Subscribers, Users],
   cors: [getServerSideURL()].filter(Boolean),
-  globals: [Header, Footer, ShopSettings],
+  globals: [Header, Footer, ShopSettings, ContactSettings],
   plugins: [
     ...plugins,
     // Media files go to Cloudflare R2 when its keys are set, otherwise to the local folder.

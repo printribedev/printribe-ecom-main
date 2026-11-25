@@ -4,6 +4,8 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 /** Server-only helpers for Cloudflare R2 (it speaks the same language as Amazon S3). */
 
 export const UPLOAD_PREFIX = 'designs/uploads/'
+/** Files sent with a Contact page enquiry live in their own folder and may also be PDFs. */
+export const ENQUIRY_PREFIX = 'enquiries/uploads/'
 
 export const ALLOWED_TYPES: Record<string, string> = {
   'image/png': 'png',
@@ -11,6 +13,7 @@ export const ALLOWED_TYPES: Record<string, string> = {
   'image/webp': 'webp',
   'image/svg+xml': 'svg',
 }
+export const ENQUIRY_TYPES: Record<string, string> = { ...ALLOWED_TYPES, 'application/pdf': 'pdf' }
 export const MAX_UPLOAD_BYTES = 15 * 1024 * 1024
 
 export const r2Configured = () =>
