@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Canvas, FabricObject, Textbox } from 'fabric'
 
+import { addToBasket } from '@/lib/quote/basket'
 import { unitPriceFor } from '@/lib/shop/pricing'
 import { isLight, placeholderShirt } from '@/lib/studio/placeholder'
 import { studioExtras } from '@/lib/studio/pricing'
@@ -620,6 +621,15 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
     if (token) router.push(`/checkout?design=${encodeURIComponent(token)}`)
   }
 
+  /** Saves the design if needed, then adds it to the quote basket. */
+  const goQuote = async () => {
+    const token = savedToken && !dirty ? savedToken : await save()
+    if (token) {
+      addToBasket({ kind: 'design', token })
+      router.push('/quote')
+    }
+  }
+
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(`${window.location.origin}/design/${p.slug}?d=${savedToken}`)
@@ -1090,6 +1100,14 @@ export const DesignStudio: React.FC<{ p: StudioProduct; initial?: SavedDesign | 
           className="mt-2 w-full rounded-full bg-sky py-3 text-[16px] font-medium text-white hover:bg-sky/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving || 'Continue to checkout'}
+        </button>
+        <button
+          type="button"
+          onClick={goQuote}
+          disabled={!usedKeys.length || !!saving || oversize.length > 0}
+          className="mt-2 w-full rounded-full border border-ink py-2.5 text-[15px] font-medium text-ink hover:bg-[#F3F4F6] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Add to quote instead
         </button>
         {orderOpen && (
           <>

@@ -1,7 +1,10 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import React, { useMemo, useState } from 'react'
+
+import { addToBasket } from '@/lib/quote/basket'
 
 const rupees = (n: number) => '₹' + Math.round(n).toLocaleString('en-IN')
 
@@ -35,6 +38,11 @@ export const ProductView: React.FC<{ p: ProductViewData }> = ({ p }) => {
   }, [p.price, sortedTiers, total])
 
   const ready = total >= p.minQty
+  const router = useRouter()
+  const addQuote = () => {
+    addToBasket({ kind: 'product', slug: p.slug, colour, qty: Math.max(total, p.minQty) })
+    router.push('/quote')
+  }
   const setSize = (s: string, n: number) => setBySize((cur) => ({ ...cur, [s]: Math.max(0, n || 0) }))
 
   const sizesParam = hasSizes
@@ -201,6 +209,13 @@ export const ProductView: React.FC<{ p: ProductViewData }> = ({ p }) => {
             Choose at least {p.minQty} {p.minQty === 1 ? 'piece' : 'pieces'}
           </button>
         )}
+        <button
+          type="button"
+          onClick={addQuote}
+          className="mt-3 block w-full rounded-full border border-ink py-3.5 text-center text-[17px] font-medium text-ink hover:bg-ink hover:text-white"
+        >
+          Add to quote
+        </button>
         {p.studio && (
           <Link
             href={`/design/${p.slug}`}

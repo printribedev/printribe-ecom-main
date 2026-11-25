@@ -77,6 +77,7 @@ export interface Config {
     designs: Design;
     customers: Customer;
     enquiries: Enquiry;
+    quotes: Quote;
     orders: Order;
     subscribers: Subscriber;
     users: User;
@@ -107,6 +108,7 @@ export interface Config {
     designs: DesignsSelect<false> | DesignsSelect<true>;
     customers: CustomersSelect<false> | CustomersSelect<true>;
     enquiries: EnquiriesSelect<false> | EnquiriesSelect<true>;
+    quotes: QuotesSelect<false> | QuotesSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
@@ -1419,6 +1421,11 @@ export interface Enquiry {
   email?: string | null;
   phone?: string | null;
   organisation?: string | null;
+  gstNumber?: string | null;
+  /**
+   * contact = Contact page, bulk = came from Bulk orders
+   */
+  topic?: string | null;
   /**
    * What they would like
    */
@@ -1451,6 +1458,85 @@ export interface Enquiry {
       }[]
     | null;
   heardFrom?: string | null;
+  /**
+   * For your team only.
+   */
+  internalNotes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quotes".
+ */
+export interface Quote {
+  id: number;
+  quoteNumber: string;
+  status: 'new' | 'quoted' | 'accepted' | 'lost';
+  /**
+   * Set if they were signed in.
+   */
+  customer?: (number | null) | Customer;
+  name: string;
+  phone: string;
+  email?: string | null;
+  company?: string | null;
+  gstNumber?: string | null;
+  city?: string | null;
+  pincode?: string | null;
+  /**
+   * Wants delivery to more than one address
+   */
+  multipleAddresses?: boolean | null;
+  /**
+   * standard or deadline
+   */
+  timeline?: string | null;
+  /**
+   * Date they need it by
+   */
+  deadline?: string | null;
+  /**
+   * What they want. Prices are the shop prices at the time of the request.
+   */
+  items?:
+    | {
+        productTitle?: string | null;
+        product?: (number | null) | Product;
+        colour?: string | null;
+        quantity?: number | null;
+        /**
+         * Per piece, including printing for studio designs
+         */
+        unitPrice?: number | null;
+        printingPerPiece?: number | null;
+        lineTotal?: number | null;
+        /**
+         * Set when the item came from the Design Studio
+         */
+        design?: (number | null) | Design;
+        designPreview?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Items total at shop prices, delivery not included
+   */
+  estimateTotal?: number | null;
+  notes?: string | null;
+  /**
+   * Files the customer uploaded (right-click and "Save as" to download).
+   */
+  files?:
+    | {
+        url?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * The amount you quoted, for your own records.
+   */
+  quotedAmount?: number | null;
   /**
    * For your team only.
    */
@@ -1809,6 +1895,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'enquiries';
         value: number | Enquiry;
+      } | null)
+    | ({
+        relationTo: 'quotes';
+        value: number | Quote;
       } | null)
     | ({
         relationTo: 'orders';
@@ -2567,6 +2657,8 @@ export interface EnquiriesSelect<T extends boolean = true> {
   email?: T;
   phone?: T;
   organisation?: T;
+  gstNumber?: T;
+  topic?: T;
   interestedIn?: T;
   need?: T;
   quantity?: T;
@@ -2581,6 +2673,51 @@ export interface EnquiriesSelect<T extends boolean = true> {
         id?: T;
       };
   heardFrom?: T;
+  internalNotes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quotes_select".
+ */
+export interface QuotesSelect<T extends boolean = true> {
+  quoteNumber?: T;
+  status?: T;
+  customer?: T;
+  name?: T;
+  phone?: T;
+  email?: T;
+  company?: T;
+  gstNumber?: T;
+  city?: T;
+  pincode?: T;
+  multipleAddresses?: T;
+  timeline?: T;
+  deadline?: T;
+  items?:
+    | T
+    | {
+        productTitle?: T;
+        product?: T;
+        colour?: T;
+        quantity?: T;
+        unitPrice?: T;
+        printingPerPiece?: T;
+        lineTotal?: T;
+        design?: T;
+        designPreview?: T;
+        id?: T;
+      };
+  estimateTotal?: T;
+  notes?: T;
+  files?:
+    | T
+    | {
+        url?: T;
+        id?: T;
+      };
+  quotedAmount?: T;
   internalNotes?: T;
   updatedAt?: T;
   createdAt?: T;

@@ -29,3 +29,6 @@ export function sentenceFrom(name: string, p: SentenceParts, details?: string): 
   if (details && details.trim()) parts.push(details.trim())
   return parts.join(' ')
 }
+
+/** Which door the customer came through. Saved on the enquiry so the team can see where it came from. */
+export const ENQUIRY_TOPICS = ['contact', 'bulk'] as const

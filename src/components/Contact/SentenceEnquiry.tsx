@@ -93,8 +93,10 @@ const Select: React.FC<{
 export const SentenceEnquiry: React.FC<{
   replyTime: string
   whatsapp?: string
+  /** Which page door the customer used (saved with the enquiry): 'contact' or 'bulk'. */
+  topic?: 'contact' | 'bulk'
   prefill?: { name?: string; email?: string; phone?: string }
-}> = ({ replyTime, whatsapp, prefill }) => {
+}> = ({ replyTime, whatsapp, topic = 'contact', prefill }) => {
   const [v, setV] = useState({
     name: prefill?.name || '',
     what: '',
@@ -104,6 +106,8 @@ export const SentenceEnquiry: React.FC<{
     phone: prefill?.phone || '',
     bestTime: '',
     email: prefill?.email || '',
+    organisation: '',
+    gstNumber: '',
     details: '',
     heard: '',
     website: '', // hidden trap field for bots
@@ -162,7 +166,7 @@ export const SentenceEnquiry: React.FC<{
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...v, files: files.map((f) => f.url), channel }),
+        body: JSON.stringify({ ...v, files: files.map((f) => f.url), channel, topic }),
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
@@ -236,19 +240,39 @@ export const SentenceEnquiry: React.FC<{
         <Select label="Best time to contact you" value={v.bestTime} onChange={set('bestTime')} options={ENQUIRY_BEST_TIME} placeholder="anytime" />.
       </p>
 
-      {(errors.name || errors.phone || errors.email || errors.details) && (
+      {(errors.name || errors.phone || errors.email || errors.gstNumber || errors.details) && (
         <p role="alert" className="mt-4 inline-block rounded-lg bg-white px-4 py-2.5 text-[15px] text-error">
-          {errors.name || errors.phone || errors.email || errors.details}
+          {errors.name || errors.phone || errors.email || errors.gstNumber || errors.details}
         </p>
       )}
 
       {/* Optional extras */}
       <div className="mt-6">
         <button type="button" onClick={() => setMore((m) => !m)} aria-expanded={more} className="text-[16px] font-medium underline underline-offset-4 hover:text-white/80">
-          {more ? 'Hide extra details' : 'Add your email, a logo or more details'}
+          {more ? 'Hide extra details' : 'Add your email, company, GST number, a logo or more details'}
         </button>
         {more && (
           <div className="mt-4 grid gap-4 rounded-2xl bg-white/10 p-5 sm:grid-cols-2">
+            <label className="block text-[15px]">
+              Company, college or team <span className="text-white/70">(optional)</span>
+              <input
+                autoComplete="organization"
+                value={v.organisation}
+                onChange={(e) => set('organisation')(e.target.value)}
+                className="mt-1 w-full rounded-lg bg-white px-3.5 py-3 text-[16px] text-ink outline-none"
+              />
+            </label>
+            <label className="block text-[15px]">
+              GST number <span className="text-white/70">(optional, for a GST invoice)</span>
+              <input
+                value={v.gstNumber}
+                onChange={(e) => set('gstNumber')(e.target.value.toUpperCase())}
+                maxLength={15}
+                data-bad={errors.gstNumber ? 'true' : undefined}
+                aria-invalid={!!errors.gstNumber}
+                className="mt-1 w-full rounded-lg bg-white px-3.5 py-3 text-[16px] uppercase text-ink outline-none"
+              />
+            </label>
             <label className="block text-[15px]">
               Email <span className="text-white/70">(optional, for a confirmation)</span>
               <input

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { getPayload } from 'payload'
 import React from 'react'
 
+import { BulkSection } from '@/components/Contact/BulkSection'
 import { OrderLookup } from '@/components/Contact/OrderLookup'
 import { SentenceEnquiry } from '@/components/Contact/SentenceEnquiry'
 import { getCustomer } from '@/lib/account/session'
@@ -17,7 +18,11 @@ export const metadata: Metadata = {
 
 const digits = (s: string) => s.replace(/[^\d]/g, '')
 
-export default async function ContactPage() {
+type Args = { searchParams: Promise<Record<string, string | string[] | undefined>> }
+
+export default async function ContactPage({ searchParams }: Args) {
+  const sp = await searchParams
+  const bulk = (Array.isArray(sp.topic) ? sp.topic[0] : sp.topic) === 'bulk'
   const payload = await getPayload({ config: configPromise })
   const settings = await payload.findGlobal({ slug: 'contact-settings' })
   const me = await getCustomer()
@@ -29,13 +34,22 @@ export default async function ContactPage() {
 
   return (
     <div className="container py-12 pb-24">
-      <p className="text-[15px] text-muted-foreground">Contact</p>
-      <h1 className="font-heading mt-1 text-[clamp(36px,5.5vw,64px)] leading-[1.05]">How can we help?</h1>
-      <p className="mt-4 max-w-xl text-lg text-body">Finish the sentence below and we will take it from there. Our team replies {replyTime}.</p>
+      <p className="text-[15px] text-muted-foreground">{bulk ? 'Bulk orders' : 'Contact'}</p>
+      <h1 className="font-heading mt-1 text-[clamp(36px,5.5vw,64px)] leading-[1.05]">{bulk ? 'Planning a bulk order?' : 'How can we help?'}</h1>
+      <p className="mt-4 max-w-xl text-lg text-body">
+        {bulk
+          ? `Finish the sentence below with what you need and how many. We send a price and mockup, and reply ${replyTime}.`
+          : `Finish the sentence below and we will take it from there. Our team replies ${replyTime}.`}
+      </p>
 
       {/* The sentence: the heart of the page */}
       <div className="mt-8">
-        <SentenceEnquiry replyTime={replyTime} whatsapp={whatsapp} prefill={me ? { name: me.name, email: me.email, phone: me.phone || '' } : undefined} />
+        <SentenceEnquiry replyTime={replyTime} whatsapp={whatsapp} topic={bulk ? 'bulk' : 'contact'} prefill={me ? { name: me.name, email: me.email, phone: me.phone || '' } : undefined} />
+      </div>
+
+      {/* Bulk orders: how it works and real volume prices */}
+      <div className="mt-6">
+        <BulkSection />
       </div>
 
       {/* Order help and ways to talk */}

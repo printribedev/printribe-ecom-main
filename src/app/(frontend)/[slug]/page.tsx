@@ -10,8 +10,6 @@ import React, { cache } from 'react'
 /** Pages that are planned for later phases. Until each one is built, its link shows "Coming soon". */
 const COMING_SOON: Record<string, string> = {
   home: 'Printribe', // shown only if the homepage hasn't been created yet
-  'bulk-orders': 'Bulk orders',
-  quote: 'Get a quote',
   about: 'About Printribe',
 }
 import { RenderBlocks } from '@/blocks/RenderBlocks'

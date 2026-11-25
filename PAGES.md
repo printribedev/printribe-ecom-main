@@ -29,8 +29,8 @@ Admin screens for Phase A (inside `/admin`): Products, Categories, Orders (statu
 | # | Page | Address |
 |---|---|---|
 | 15 | Accessories (and sub-categories) | `/accessories` |
-| 16 | Bulk orders | `/bulk-orders` |
-| 17 | Get a quote | `/quote` |
+| 16 | Bulk orders | `/bulk-orders` | Merged into the Contact page: `/bulk-orders` opens `/contact?topic=bulk` (bulk section with real price slabs) |
+| 17 | Get a quote | `/quote` | Built: quote basket with instant estimate, request form, Quote requests inbox in the admin |
 | 18 | About Printribe | `/about` |
 | 19 | FAQ | `/faq` |
 | 20 | Blog list and blog post | `/blog`, `/blog/[slug]` |

@@ -17,5 +17,8 @@ export const redirects: NextConfig['redirects'] = async () => {
   // The menu, footer and buttons link to /design-studio; the real hub page lives at /design
   const designStudioRedirect = { source: '/design-studio', destination: '/design', permanent: false }
 
-  return [internetExplorerRedirect, designStudioRedirect]
+  // Bulk orders and Contact are one page
+  const bulkRedirect = { source: '/bulk-orders', destination: '/contact?topic=bulk', permanent: false }
+
+  return [internetExplorerRedirect, designStudioRedirect, bulkRedirect]
 }

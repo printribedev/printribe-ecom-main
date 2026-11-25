@@ -6,6 +6,7 @@ import { fail, readJson } from '@/lib/account/http'
 import { getCustomerFromRequest, sameOrigin } from '@/lib/account/session'
 import {
   ENQUIRY_BEST_TIME,
+  ENQUIRY_TOPICS,
   ENQUIRY_HEARD,
   ENQUIRY_NEEDS,
   ENQUIRY_QUANTITIES,
@@ -24,6 +25,8 @@ type Body = {
   email?: string
   phone?: string
   organisation?: string
+  gstNumber?: string
+  topic?: string
   what?: string
   need?: string
   quantity?: string
@@ -51,6 +54,8 @@ export async function POST(req: Request) {
   const phoneRaw = String(body.phone ?? '').trim()
   const details = String(body.details ?? '').trim()
   const organisation = String(body.organisation ?? '').trim().slice(0, 120)
+  const gstNumber = String(body.gstNumber ?? '').trim().toUpperCase().replace(/\s+/g, '')
+  const topic = pick(ENQUIRY_TOPICS, body.topic) || 'contact'
 
   const errors: Record<string, string> = {}
   const nameErr = validateName(name)
@@ -61,6 +66,7 @@ export async function POST(req: Request) {
   }
   const phoneErr = validatePhone(phoneRaw)
   if (phoneErr) errors.phone = phoneErr
+  if (gstNumber && !/^[0-9A-Z]{15}$/.test(gstNumber)) errors.gstNumber = 'A GST number has 15 letters and digits. Please check it.'
   if (details.length > 3000) errors.details = 'Please keep your notes under 3000 characters.'
   if (Object.keys(errors).length) return fail('Please check the highlighted details.', 422, { errors })
 
@@ -105,6 +111,8 @@ export async function POST(req: Request) {
       email: email || undefined,
       phone,
       organisation: organisation || undefined,
+      gstNumber: gstNumber || undefined,
+      topic,
       interestedIn: what || undefined,
       need: need || undefined,
       quantity: quantity || undefined,
@@ -124,7 +132,7 @@ export async function POST(req: Request) {
     const settings = await payload.findGlobal({ slug: 'contact-settings' })
     await payload.sendEmail({
       to: settings.email || 'info@theprintribe.com',
-      subject: `New enquiry from ${name}`,
+      subject: `New ${topic === 'bulk' ? 'bulk order enquiry' : 'enquiry'} from ${name}${organisation ? ' (' + organisation + ')' : ''}`,
       html: `<p><strong>${esc(name)}</strong> · ${esc(phone)}${email ? ' · ' + esc(email) : ''}</p>
 <p style="white-space:pre-wrap">${esc(message)}</p>${files.map((u) => `<p><a href="${u}">File</a></p>`).join('')}
 <p>${channel === 'whatsapp' ? 'They also opened WhatsApp, so a message may arrive there. ' : ''}Open it in the admin under Enquiries.</p>`,

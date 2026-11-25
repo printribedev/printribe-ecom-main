@@ -39,7 +39,14 @@ export const Enquiries: CollectionConfig = {
         { name: 'phone', type: 'text', admin: { readOnly: true } },
       ],
     },
-    { name: 'organisation', type: 'text', admin: { readOnly: true } },
+    {
+      type: 'row',
+      fields: [
+        { name: 'organisation', type: 'text', admin: { readOnly: true } },
+        { name: 'gstNumber', type: 'text', label: 'GST number', admin: { readOnly: true } },
+        { name: 'topic', type: 'text', admin: { readOnly: true, description: 'contact = Contact page, bulk = came from Bulk orders' } },
+      ],
+    },
     {
       type: 'row',
       fields: [
