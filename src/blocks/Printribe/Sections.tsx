@@ -225,8 +225,8 @@ export const StudioTeaserSection: React.FC<StudioTeaserBlock> = ({ tag, heading,
   const shownTag = tag && !/soon/i.test(tag) ? tag : null
   const label = buttonLabel && !/notify/i.test(buttonLabel) ? buttonLabel : 'Start designing'
   return (
-    <section className="py-2">
-      <div className="mx-5 grid items-center gap-10 rounded-3xl bg-black px-6 py-12 text-white md:px-14 md:py-[72px] lg:mx-auto lg:max-w-[1180px] lg:grid-cols-[1.1fr_1fr]">
+    <section className="container py-2">
+      <div className="grid items-center gap-10 rounded-3xl bg-black px-6 py-12 text-white md:px-14 md:py-[72px] lg:grid-cols-[1.1fr_1fr]">
         <div>
           {shownTag && (
             <span className="mb-5 inline-block rounded-full bg-sky-bright px-3.5 py-1 text-[13px] font-semibold text-[#00253a]">
@@ -414,8 +414,8 @@ export const LatestPostsSection: React.FC<LatestPostsBlock> = async ({
 /* ---------- 10. Bulk order band ---------- */
 
 export const QuoteBandSection: React.FC<QuoteBandBlock> = ({ heading, text, buttons }) => (
-  <section className="py-2">
-    <div className="mx-5 flex flex-wrap items-center justify-between gap-6 rounded-3xl bg-sky px-6 py-14 text-white md:px-[52px] lg:mx-auto lg:max-w-[1180px]">
+  <section className="container py-2">
+    <div className="flex flex-wrap items-center justify-between gap-6 rounded-3xl bg-sky px-6 py-14 text-white md:px-[52px]">
       <div>
         <h2 className="font-heading text-[clamp(30px,4.4vw,48px)]">{heading}</h2>
         {text && <p className="mt-2.5 text-lg text-white/90">{text}</p>}
