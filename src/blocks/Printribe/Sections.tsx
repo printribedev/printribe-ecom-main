@@ -52,7 +52,7 @@ export const MerchHeroSection: React.FC<MerchHeroBlock> = ({
 }) => {
   const bg = asMedia(background)
   return (
-    <section className="relative flex min-h-[max(640px,85vh)] items-end overflow-hidden bg-[#111] text-white">
+    <section className="relative flex min-h-[max(640px,85vh)] items-end lg:min-h-[90vh] overflow-hidden bg-[#111] text-white">
       {bg ? (
         isVideo(bg) ? (
           // eslint-disable-next-line jsx-a11y/media-has-caption
