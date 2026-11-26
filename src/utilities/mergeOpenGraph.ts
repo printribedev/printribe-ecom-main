@@ -6,7 +6,10 @@ const defaultOpenGraph: Metadata['openGraph'] = {
   description: 'Custom apparel and accessories, made right and delivered on time.',
   images: [
     {
-      url: `${getServerSideURL()}/website-template-OG.webp`, // TODO replace with a Printribe share image
+      url: `${getServerSideURL()}/og-image.png`,
+      width: 1200,
+      height: 630,
+      alt: 'Printribe: custom apparel and accessories',
     },
   ],
   siteName: 'Printribe',

@@ -23,10 +23,14 @@ const generateURL: GenerateURL<Post | Page> = ({ doc }) => {
   return doc?.slug ? `${url}/${doc.slug}` : url
 }
 
+/** Only signed-in team members (the admin). Visitors and customers are refused. */
+const staffOnly = ({ req }: { req: { user?: unknown } }) => Boolean(req.user)
+
 export const plugins: Plugin[] = [
   redirectsPlugin({
     collections: ['pages', 'posts'],
     overrides: {
+      access: { read: staffOnly, create: staffOnly, update: staffOnly, delete: staffOnly },
       // @ts-expect-error - This is a valid override, mapped fields don't resolve to the same type
       fields: ({ defaultFields }) => {
         return defaultFields.map((field) => {
@@ -58,7 +62,10 @@ export const plugins: Plugin[] = [
     fields: {
       payment: false,
     },
+    // Printribe does not use the form builder (the Contact and Quote pages have their own forms), so nobody but staff may use it
+    formSubmissionOverrides: { access: { read: staffOnly, create: staffOnly, update: staffOnly, delete: staffOnly } },
     formOverrides: {
+      access: { read: staffOnly, create: staffOnly, update: staffOnly, delete: staffOnly },
       fields: ({ defaultFields }) => {
         return defaultFields.map((field) => {
           if ('name' in field && field.name === 'confirmationMessage') {
@@ -84,6 +91,7 @@ export const plugins: Plugin[] = [
     collections: ['posts'],
     beforeSync: beforeSyncWithSearch,
     searchOverrides: {
+      access: { read: staffOnly, create: staffOnly, update: staffOnly, delete: staffOnly },
       fields: ({ defaultFields }) => {
         return [...defaultFields, ...searchFields]
       },
