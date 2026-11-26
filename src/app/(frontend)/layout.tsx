@@ -4,13 +4,11 @@ import { cn } from '@/utilities/ui'
 import { Inter } from 'next/font/google'
 import React from 'react'
 
-import { AdminBar } from '@/components/AdminBar'
 import { HelpButton } from '@/components/Contact/HelpButton'
 import { Footer } from '@/Footer/Component'
 import { Header } from '@/Header/Component'
 import { Providers } from '@/providers'
 import { mergeOpenGraph } from '@/utilities/mergeOpenGraph'
-import { draftMode } from 'next/headers'
 
 import './globals.css'
 import { getServerSideURL } from '@/utilities/getURL'
@@ -19,8 +17,6 @@ import { getServerSideURL } from '@/utilities/getURL'
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' })
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const { isEnabled } = await draftMode()
-
   return (
     // The site is light-only: the theme is fixed instead of following the visitor's system setting.
     <html className={cn(inter.variable)} data-theme="light" lang="en" suppressHydrationWarning>
@@ -35,12 +31,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <Providers>
-          <AdminBar
-            adminBarProps={{
-              preview: isEnabled,
-            }}
-          />
-
           <Header />
           <main className="flex-1">{children}</main>
           <Footer />
