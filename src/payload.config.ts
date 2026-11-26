@@ -99,6 +99,8 @@ export default buildConfig({
     ...(process.env.R2_ACCESS_KEY_ID
       ? [
           s3Storage({
+            // Files go straight from the browser to R2. Vercel rejects uploads over 4.5 MB when they pass through the server (videos).
+            clientUploads: true,
             collections: { media: { prefix: 'media', generateFileURL: ({ filename, prefix }) => `${process.env.R2_PUBLIC_URL}/${prefix}/${filename}` } },
             bucket: process.env.R2_BUCKET || '',
             config: {
