@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import React from 'react'
 
-import { LegalPage } from '@/components/Legal/LegalPage'
+import { EditableLegal } from '@/components/Legal/EditableLegal'
 import { terms } from '@/lib/legal/terms'
 
 export const metadata: Metadata = {
@@ -10,5 +10,5 @@ export const metadata: Metadata = {
 }
 
 export default function TermsPage() {
-  return <LegalPage doc={terms} />
+  return <EditableLegal slug="terms" fallback={terms} />
 }

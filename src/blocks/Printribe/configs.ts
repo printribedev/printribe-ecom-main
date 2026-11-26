@@ -223,6 +223,30 @@ export const Newsletter: Block = {
   ],
 }
 
+/**
+ * A plain text page: Terms, Privacy, About, Shipping & returns, FAQ and so on.
+ * Add it to a page (set the page's Hero to "None") and write the sections in the admin.
+ */
+export const TextPage: Block = {
+  slug: 'textPage',
+  interfaceName: 'TextPageBlock',
+  labels: { singular: 'Text page (legal, about, FAQ)', plural: 'Text pages' },
+  fields: [
+    { name: 'updated', type: 'text', admin: { description: 'Shown above the title, e.g. "27 November 2026". Leave empty to hide.' } },
+    { name: 'title', type: 'text', required: true },
+    { name: 'intro', type: 'textarea', admin: { description: 'The short paragraph under the title' } },
+    {
+      name: 'sections',
+      type: 'array',
+      admin: { initCollapsed: true, description: 'Each section has a heading and text. Drag to reorder.' },
+      fields: [
+        { name: 'heading', type: 'text', required: true },
+        { name: 'body', type: 'richText', required: true },
+      ],
+    },
+  ],
+}
+
 /** Every Printribe homepage section, in the order they appear in the "add block" menu. */
 export const printribeBlocks: Block[] = [
   MerchHero,
@@ -236,4 +260,5 @@ export const printribeBlocks: Block[] = [
   LatestPosts,
   QuoteBand,
   Newsletter,
+  TextPage,
 ]

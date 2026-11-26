@@ -235,6 +235,7 @@ export interface Page {
     | LatestPostsBlock
     | QuoteBandBlock
     | NewsletterBlock
+    | TextPageBlock
     | CallToActionBlock
     | ContentBlock
     | MediaBlock
@@ -729,6 +730,48 @@ export interface NewsletterBlock {
   id?: string | null;
   blockName?: string | null;
   blockType: 'newsletter';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TextPageBlock".
+ */
+export interface TextPageBlock {
+  /**
+   * Shown above the title, e.g. "27 November 2026". Leave empty to hide.
+   */
+  updated?: string | null;
+  title: string;
+  /**
+   * The short paragraph under the title
+   */
+  intro?: string | null;
+  /**
+   * Each section has a heading and text. Drag to reorder.
+   */
+  sections?:
+    | {
+        heading: string;
+        body: {
+          root: {
+            type: string;
+            children: {
+              type: any;
+              version: number;
+              [k: string]: unknown;
+            }[];
+            direction: ('ltr' | 'rtl') | null;
+            format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+            indent: number;
+            version: number;
+          };
+          [k: string]: unknown;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  id?: string | null;
+  blockName?: string | null;
+  blockType: 'textPage';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2016,6 +2059,7 @@ export interface PagesSelect<T extends boolean = true> {
         latestPosts?: T | LatestPostsBlockSelect<T>;
         quoteBand?: T | QuoteBandBlockSelect<T>;
         newsletter?: T | NewsletterBlockSelect<T>;
+        textPage?: T | TextPageBlockSelect<T>;
         cta?: T | CallToActionBlockSelect<T>;
         content?: T | ContentBlockSelect<T>;
         mediaBlock?: T | MediaBlockSelect<T>;
@@ -2238,6 +2282,24 @@ export interface NewsletterBlockSelect<T extends boolean = true> {
   heading?: T;
   text?: T;
   buttonLabel?: T;
+  id?: T;
+  blockName?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TextPageBlock_select".
+ */
+export interface TextPageBlockSelect<T extends boolean = true> {
+  updated?: T;
+  title?: T;
+  intro?: T;
+  sections?:
+    | T
+    | {
+        heading?: T;
+        body?: T;
+        id?: T;
+      };
   id?: T;
   blockName?: T;
 }

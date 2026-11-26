@@ -11,6 +11,7 @@
     "dev:prod": "cross-env NODE_OPTIONS=--no-deprecation rm -rf .next && npm run build && npm start",
     "seed": "cross-env NODE_OPTIONS=--no-deprecation tsx src/seed/printribe.ts",
     "seed:shop": "cross-env NODE_OPTIONS=--no-deprecation tsx src/seed/shop.ts",
+    "seed:legal": "cross-env NODE_OPTIONS=--no-deprecation tsx src/seed/legal-pages.ts",
     "seed:studio": "cross-env NODE_OPTIONS=--no-deprecation tsx src/seed/studio.ts",
     "fix:studio-content": "cross-env NODE_OPTIONS=--no-deprecation tsx src/seed/studio-content.ts",
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",

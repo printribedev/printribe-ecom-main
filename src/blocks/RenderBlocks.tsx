@@ -19,6 +19,7 @@ import {
   ReviewsSection,
   StepsSection,
   StudioTeaserSection,
+  TextPageSection,
 } from '@/blocks/Printribe/Sections'
 
 /** Generic blocks from the template. They get vertical spacing around them. */
@@ -43,6 +44,7 @@ const printribeComponents = {
   latestPosts: LatestPostsSection,
   quoteBand: QuoteBandSection,
   newsletter: NewsletterSection,
+  textPage: TextPageSection,
 }
 
 export const RenderBlocks: React.FC<{

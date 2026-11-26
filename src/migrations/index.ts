@@ -6,6 +6,7 @@ import * as migration_20261125_140452_customers from './20261125_140452_customer
 import * as migration_20261125_144105_studio_checkout from './20261125_144105_studio_checkout';
 import * as migration_20261125_193254_contact_page from './20261125_193254_contact_page';
 import * as migration_20261125_200308_bulk_and_quote from './20261125_200308_bulk_and_quote';
+import * as migration_20261126_225915_text_page from './20261126_225915_text_page';
 
 export const migrations = [
   {
@@ -46,6 +47,11 @@ export const migrations = [
   {
     up: migration_20261125_200308_bulk_and_quote.up,
     down: migration_20261125_200308_bulk_and_quote.down,
-    name: '20261125_200308_bulk_and_quote'
+    name: '20261125_200308_bulk_and_quote',
+  },
+  {
+    up: migration_20261126_225915_text_page.up,
+    down: migration_20261126_225915_text_page.down,
+    name: '20261126_225915_text_page'
   },
 ];

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import React from 'react'
 
-import { LegalPage } from '@/components/Legal/LegalPage'
+import { EditableLegal } from '@/components/Legal/EditableLegal'
 import { privacy } from '@/lib/legal/privacy'
 
 export const metadata: Metadata = {
@@ -10,5 +10,5 @@ export const metadata: Metadata = {
 }
 
 export default function PrivacyPage() {
-  return <LegalPage doc={privacy} />
+  return <EditableLegal slug="privacy" fallback={privacy} />
 }

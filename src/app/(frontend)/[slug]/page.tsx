@@ -87,7 +87,7 @@ export default async function Page({ params: paramsPromise }: Args) {
 
   return (
     // The homepage is made of full-width sections that manage their own spacing
-    <article className={decodedSlug === 'home' ? '' : 'pt-16 pb-24'}>
+    <article className={decodedSlug === 'home' ? '' : 'pt-12 pb-24'}>
       <PageClient />
       {/* Allows redirects for valid pages too */}
       <PayloadRedirects disableNotFound url={url} />

@@ -15,10 +15,12 @@ import type {
   ReviewsBlock,
   StepsBlock,
   StudioTeaserBlock,
+  TextPageBlock,
   Media as MediaType,
 } from '@/payload-types'
 
 import { Media } from '@/components/Media'
+import RichText from '@/components/RichText'
 import { PillButton } from '@/components/PillButton'
 import { SubscribeForm } from './SubscribeForm'
 
@@ -427,6 +429,28 @@ export const QuoteBandSection: React.FC<QuoteBandBlock> = ({ heading, text, butt
       </div>
     </div>
   </section>
+)
+
+/* ---------- Text page (Terms, Privacy, About, FAQ...) ---------- */
+
+export const TextPageSection: React.FC<TextPageBlock> = ({ updated, title, intro, sections }) => (
+  <div className="container">
+    {updated && <p className="text-[15px] text-muted-foreground">Last updated {updated}</p>}
+    <h1 className="font-heading mt-1 text-[clamp(32px,4.5vw,48px)] leading-tight">{title}</h1>
+    {intro && <p className="mt-4 text-lg text-body">{intro}</p>}
+
+    {(sections || []).map((s, i) => (
+      <section key={s.id || i} className="mt-10 border-t border-border pt-8">
+        <h2 className="font-heading text-2xl">{s.heading}</h2>
+        <RichText
+          data={s.body}
+          enableGutter={false}
+          enableProse={false}
+          className="mt-4 space-y-3 text-[17px] leading-relaxed text-body [&_a]:text-sky [&_a]:underline [&_a]:underline-offset-2 [&_h3]:font-heading [&_h3]:pt-2 [&_h3]:text-lg [&_h3]:text-ink [&_ol]:list-decimal [&_ol]:space-y-1.5 [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:space-y-1.5 [&_ul]:pl-6"
+        />
+      </section>
+    ))}
+  </div>
 )
 
 /* ---------- 11. Newsletter ---------- */
